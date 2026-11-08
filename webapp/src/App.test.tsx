@@ -1,5 +1,6 @@
-import { act, fireEvent, render, screen } from '@testing-library/react'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { fireEvent, render, screen } from '@testing-library/react'
+import { MemoryRouter, useLocation, useNavigate } from 'react-router'
+import { describe, expect, it, vi } from 'vitest'
 import App from './App'
 
 // jsdom has no WebGL, so the 3D viewer is replaced by a stub showing its URL.
@@ -13,69 +14,94 @@ const models: Model[] = [
   { slug: 'pyramid', name: 'Pyramid', description: 'A pyramid.\nPointy.', stlUrl: '/p.stl' },
 ]
 
-function setHash(hash: string) {
-  act(() => {
-    window.location.hash = hash
-    window.dispatchEvent(new HashChangeEvent('hashchange'))
-  })
-}
-
 const selectedOption = () => screen.getByRole('option', { selected: true })
 
-describe('App', () => {
-  afterEach(() => setHash(''))
+/** Exposes the current location and a back button next to the app. */
+function LocationProbe() {
+  const location = useLocation()
+  const navigate = useNavigate()
+  return (
+    <>
+      <div data-testid="location">{location.pathname}</div>
+      <button type="button" onClick={() => navigate(-1)}>
+        back
+      </button>
+    </>
+  )
+}
 
+function renderApp(initialEntries: string[], appModels?: Model[], initialIndex?: number) {
+  return render(
+    <MemoryRouter initialEntries={initialEntries} initialIndex={initialIndex}>
+      <App models={appModels} />
+      <LocationProbe />
+    </MemoryRouter>,
+  )
+}
+
+const pathname = () => screen.getByTestId('location').textContent
+
+describe('App', () => {
   it('renders the heading, the model names and selects the first model', () => {
-    render(<App models={models} />)
+    renderApp(['/'], models)
     expect(screen.getByRole('heading', { level: 1, name: 'Work for Claus' })).toBeInTheDocument()
     expect(screen.getAllByRole('option').map((o) => o.textContent)).toEqual(['Cube', 'Pyramid'])
     expect(selectedOption()).toHaveTextContent('Cube')
     expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent('Cube')
     expect(screen.getByTestId('model-preview')).toBeInTheDocument()
+    expect(pathname()).toBe('/cube')
   })
 
   it('shows the 3D viewer for the selected model', async () => {
-    render(<App models={models} />)
+    renderApp(['/'], models)
     expect(await screen.findByTestId('stl-viewer')).toHaveTextContent('/cube.stl')
     fireEvent.click(screen.getByRole('option', { name: 'Pyramid' }))
     expect(await screen.findByText('/p.stl')).toBeInTheDocument()
   })
 
-  it('selects a clicked model, shows its description and updates the hash', async () => {
-    render(<App models={models} />)
+  it('selects a clicked model, shows its description and updates the URL', async () => {
+    renderApp(['/'], models)
     fireEvent.click(screen.getByRole('option', { name: 'Pyramid' }))
     expect(await screen.findByRole('heading', { level: 2, name: 'Pyramid' })).toBeInTheDocument()
-    expect(window.location.hash).toBe('#/pyramid')
+    expect(pathname()).toBe('/pyramid')
     expect(selectedOption()).toHaveTextContent('Pyramid')
     expect(screen.getByText(/A pyramid\.\s+Pointy\./)).toBeInTheDocument()
   })
 
-  it('selects the model named by the initial hash', () => {
-    setHash('#/pyramid')
-    render(<App models={models} />)
+  it('selects the model named by the initial entry', () => {
+    renderApp(['/pyramid'], models)
     expect(selectedOption()).toHaveTextContent('Pyramid')
   })
 
-  it('follows hash changes, for example the back button', () => {
-    render(<App models={models} />)
-    setHash('#/pyramid')
+  it('follows history navigation, for example the back button', () => {
+    renderApp(['/cube', '/pyramid'], models, 1)
     expect(selectedOption()).toHaveTextContent('Pyramid')
+    fireEvent.click(screen.getByRole('button', { name: 'back' }))
+    expect(selectedOption()).toHaveTextContent('Cube')
+    expect(pathname()).toBe('/cube')
   })
 
-  it('falls back to the first model for an unknown hash', () => {
-    setHash('#/nope')
-    render(<App models={models} />)
+  it('goes back to the previous model after selecting one', () => {
+    renderApp(['/'], models)
+    fireEvent.click(screen.getByRole('option', { name: 'Pyramid' }))
+    fireEvent.click(screen.getByRole('button', { name: 'back' }))
     expect(selectedOption()).toHaveTextContent('Cube')
   })
 
+  it('redirects an unknown slug to the first model', () => {
+    renderApp(['/nope'], models)
+    expect(selectedOption()).toHaveTextContent('Cube')
+    expect(pathname()).toBe('/cube')
+  })
+
   it('shows an empty state without models', () => {
-    render(<App models={[]} />)
+    renderApp(['/pyramid'], [])
     expect(screen.getByText('No models found')).toBeInTheDocument()
     expect(screen.queryByRole('listbox')).not.toBeInTheDocument()
   })
 
   it('lists the repository models by default', () => {
-    render(<App />)
+    renderApp(['/'])
     expect(screen.getAllByRole('option').map((o) => o.textContent)).toEqual([
       'Calibration cube',
       'Pyramid',
