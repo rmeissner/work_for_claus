@@ -1,6 +1,11 @@
 import { act, fireEvent, render, screen } from '@testing-library/react'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
+
+// jsdom has no WebGL, so the 3D viewer is replaced by a stub showing its URL.
+vi.mock('./components/StlViewer', () => ({
+  StlViewer: ({ url }: { url: string }) => <div data-testid="stl-viewer">{url}</div>,
+}))
 import type { Model } from './models/types'
 
 const models: Model[] = [
@@ -27,6 +32,13 @@ describe('App', () => {
     expect(selectedOption()).toHaveTextContent('Cube')
     expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent('Cube')
     expect(screen.getByTestId('model-preview')).toBeInTheDocument()
+  })
+
+  it('shows the 3D viewer for the selected model', async () => {
+    render(<App models={models} />)
+    expect(await screen.findByTestId('stl-viewer')).toHaveTextContent('/cube.stl')
+    fireEvent.click(screen.getByRole('option', { name: 'Pyramid' }))
+    expect(await screen.findByText('/p.stl')).toBeInTheDocument()
   })
 
   it('selects a clicked model, shows its description and updates the hash', async () => {
