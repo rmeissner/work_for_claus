@@ -19,7 +19,7 @@ This epic resolves both. The work is split into these PRs:
 2. **Add React Router** (dependency only).
 3. **Route the model selection** through React Router and remove `useSelectedModel`. Depends on 2.
 4. **Add Tailwind CSS** (dependency and Vite plugin only). Can run in parallel with 2 and 3.
-5. **Design tokens and app layout in Tailwind**: one `theme.css` with the tokens for both themes, the global layout moved from `index.css` to utilities. Depends on 4.
+5. **Design tokens and app layout in Tailwind**: one `theme.css` with the global styles: color tokens for both themes plus the size tokens (font family, font sizes, radii, layout widths), and the global layout moved from `index.css` to utilities. Depends on 4.
 6. **Migrate the component styles** (`ModelList`, `ModelDetails`, `StlViewer`) to Tailwind and delete the CSS Modules. Depends on 5. Can run in parallel with 7.
 7. **Theme toggle**: a light/dark/system switch in the header, persisted in `localStorage`, without a flash of the wrong theme on load. Depends on 5. Can run in parallel with 6.
 8. **Cleanup**: remove this specification file. Depends on all other phases.
@@ -40,7 +40,7 @@ The router track (2–3) and the styling track (4–7) are independent of each o
 ### Styling: Tailwind CSS v4 with CSS variables for the theme tokens
 
 - Add `tailwindcss` and `@tailwindcss/vite` (v4). Tailwind v4 is configured in CSS (`@import "tailwindcss"`, `@theme`), has no runtime and no JavaScript config file.
-- **One source of design tokens:** `webapp/src/theme.css` defines semantic color tokens (`--color-fg`, `--color-bg`, `--color-surface`, `--color-border`, `--color-muted`, `--color-hover`, `--color-selected-bg`, `--color-selected-fg`, `--color-accent`, `--color-danger`) as CSS custom properties for each theme, and exposes them to Tailwind with `@theme inline`. Components use semantic utilities like `bg-surface`, `text-muted`, `border-border`, so they don't need `dark:` variants: the variables switch, the classes stay the same. Spacing, typography and radii use Tailwind's default scale.
+- **One source of design tokens:** `webapp/src/theme.css` defines semantic color tokens (`--color-fg`, `--color-bg`, `--color-surface`, `--color-border`, `--color-muted`, `--color-hover`, `--color-selected-bg`, `--color-selected-fg`, `--color-accent`, `--color-danger`) as CSS custom properties for each theme, and exposes them to Tailwind with `@theme inline`. Components use semantic utilities like `bg-surface`, `text-muted`, `border-border`, so they don't need `dark:` variants: the variables switch, the classes stay the same. - **Size tokens** live in the same `@theme` block: the font family (`--font-sans`, today's system stack), the font sizes in use (`--text-title` 1.25rem for the app and model headings, body 1rem), the radius (`--radius-item` 6px for list items) and the layout sizes (`--spacing-sidebar` 280px, the 768px breakpoint as `--breakpoint-md`, the preview's `--spacing-preview-min` 240px). Values that are already on Tailwind's default scale (padding 0.5rem/0.75rem/1rem, …) use the default spacing utilities instead of new tokens, so the theme only names what is specific to this app.
 - **Theme selection** with a `data-theme` attribute on `<html>`:
   - no attribute (system): light tokens, overridden by dark tokens under `@media (prefers-color-scheme: dark)`;
   - `data-theme="light"` / `data-theme="dark"`: forces that theme, independent of the OS.
@@ -114,7 +114,16 @@ The layout is unchanged otherwise, including the stacked layout below 768 px.
 @theme inline {
   --color-fg: var(--fg);
   --color-bg: var(--bg);
-  /* … one entry per token … */
+  /* … one entry per color token … */
+}
+
+@theme {
+  --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --text-title: 1.25rem;
+  --radius-item: 6px;
+  --spacing-sidebar: 280px;
+  --spacing-preview-min: 240px;
+  --breakpoint-md: 768px;
 }
 @custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
 ```
@@ -162,7 +171,7 @@ Every phase keeps `npm run lint`, `npm run typecheck`, `npm test` and `npm run b
 ### Phase 5: Design tokens and app layout in Tailwind
 
 - **Depends on:** 4. **Can run in parallel with:** 2, 3.
-- New `theme.css`; `index.css` reduced to the imports and the base; `App.tsx` layout classes. Component CSS Modules keep working because the old variable names (`--border`, `--muted`, …) are the token variables themselves, so they stay defined until phase 6.
+- New `theme.css` with the color and size tokens (global styles); `index.css` reduced to the imports and the base; `App.tsx` layout classes. Component CSS Modules keep working because the old variable names (`--border`, `--muted`, …) are the token variables themselves, so they stay defined until phase 6.
 - Visual check: the app looks the same as before in light and dark (OS) mode.
 
 ### Phase 6: Migrate the component styles
