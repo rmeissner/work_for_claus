@@ -1,0 +1,9 @@
+{
+  "name": "24-point star",
+  "description": "Slot-together star with 24 points: four flat six-pointed stars that slide onto each other along a common axis.\nPrint all four parts flat without supports (PLA, 0.2 mm layers). Hold part A (with the loop) upright, then push parts B, C and D up onto it from below, each turned 45° further, until they stop.",
+  "files": [
+    {
+      "file": "star-24.stl"
+    }
+  ]
+}

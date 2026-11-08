@@ -103,6 +103,7 @@ describe('App', () => {
   it('lists the repository models by default', () => {
     renderApp(['/'])
     expect(screen.getAllByRole('option').map((o) => o.textContent)).toEqual([
+      '24-point star',
       'Calibration cube',
       'Pyramid',
       'Star ornament',
