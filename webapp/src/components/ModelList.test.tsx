@@ -7,7 +7,7 @@ const models: Model[] = ['a', 'b', 'c'].map((slug) => ({
   slug,
   name: `Model ${slug.toUpperCase()}`,
   description: '',
-  stlUrl: `/${slug}.stl`,
+  files: [{ name: `${slug}.stl`, fileName: `${slug}.stl`, url: `/${slug}.stl` }],
 }))
 
 function renderList(selectedSlug = 'b') {
