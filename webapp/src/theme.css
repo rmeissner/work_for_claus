@@ -3,8 +3,8 @@
  *
  * Colors are CSS variables per theme (system, forced light, forced dark),
  * exposed to Tailwind as semantic utilities (bg-surface, text-muted, ...).
- * The short names (--border, --muted, ...) are also used directly by the
- * component CSS Modules until they are migrated to Tailwind.
+ * The short names (--border, --muted, ...) are the raw per-theme variables
+ * that the @theme inline block below maps to those utilities.
  */
 
 :root {

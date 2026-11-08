@@ -2,25 +2,26 @@ import { OrbitControls, Stage } from '@react-three/drei'
 import { Canvas, useLoader } from '@react-three/fiber'
 import { Component, Suspense, useMemo, type ReactNode } from 'react'
 import { STLLoader } from 'three/addons/loaders/STLLoader.js'
-import styles from './StlViewer.module.css'
 
 export interface StlViewerProps {
   url: string
 }
 
+const STATUS_CLASS = 'flex h-full w-full items-center justify-center'
+
 export function StlViewer({ url }: StlViewerProps) {
   return (
-    <div className={styles.viewer}>
+    <div className="relative h-full w-full">
       <ErrorBoundary
         fallback={
-          <p className={`${styles.status} ${styles.error}`} role="alert">
+          <p className={`${STATUS_CLASS} text-danger`} role="alert">
             Could not load model
           </p>
         }
       >
         <Suspense
           fallback={
-            <p className={styles.status} role="status">
+            <p className={`${STATUS_CLASS} text-muted`} role="status">
               Loading model…
             </p>
           }
