@@ -1,6 +1,5 @@
 import { useRef, type KeyboardEvent } from 'react'
 import type { Model } from '../models/types'
-import styles from './ModelList.module.css'
 
 interface ModelListProps {
   models: Model[]
@@ -31,7 +30,7 @@ export function ModelList({ models, selectedSlug, onSelect }: ModelListProps) {
       ref={listRef}
       role="listbox"
       aria-label="Models"
-      className={styles.list}
+      className="m-0 list-none p-1"
       onKeyDown={handleKeyDown}
     >
       {models.map((model) => {
@@ -42,7 +41,7 @@ export function ModelList({ models, selectedSlug, onSelect }: ModelListProps) {
             role="option"
             aria-selected={selected}
             tabIndex={selected ? 0 : -1}
-            className={styles.item}
+            className="cursor-pointer rounded-item px-3 py-2 select-none hover:bg-hover focus-visible:-outline-offset-2 focus-visible:outline-2 focus-visible:outline-accent aria-selected:bg-selected-bg aria-selected:font-semibold aria-selected:text-selected-fg"
             onClick={() => onSelect(model.slug)}
           >
             {model.name}
