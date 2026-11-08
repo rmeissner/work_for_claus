@@ -1,7 +1,7 @@
 import { OrbitControls, Stage } from '@react-three/drei'
 import { Canvas, useLoader } from '@react-three/fiber'
 import { Component, Suspense, useMemo, type ReactNode } from 'react'
-import { STLLoader } from 'three/examples/jsm/loaders/STLLoader.js'
+import { STLLoader } from 'three/addons/loaders/STLLoader.js'
 import styles from './StlViewer.module.css'
 
 export interface StlViewerProps {
