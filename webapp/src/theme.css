@@ -1,0 +1,76 @@
+/*
+ * Design tokens: the single source of global styles.
+ *
+ * Colors are CSS variables per theme (system, forced light, forced dark),
+ * exposed to Tailwind as semantic utilities (bg-surface, text-muted, ...).
+ * The short names (--border, --muted, ...) are also used directly by the
+ * component CSS Modules until they are migrated to Tailwind.
+ */
+
+:root {
+  --fg: #1f2328;
+  --bg: #ffffff;
+  --border: #d1d9e0;
+  --muted: #59636e;
+  --surface: #f6f8fa;
+  --hover-bg: #eff2f5;
+  --selected-bg: #ddf4ff;
+  --selected-fg: #0550ae;
+  --accent: #0969da;
+  --danger: #b00020;
+  color-scheme: light;
+}
+
+/* System dark, unless light is forced. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --fg: #e6edf3;
+    --bg: #0d1117;
+    --border: #3d444d;
+    --muted: #9198a1;
+    --surface: #151b23;
+    --hover-bg: #212830;
+    --selected-bg: #1f3a5f;
+    --selected-fg: #a5d6ff;
+    --accent: #4493f8;
+    --danger: #ff6b81;
+    color-scheme: dark;
+  }
+}
+
+/* Forced dark, independent of the OS. */
+:root[data-theme='dark'] {
+  --fg: #e6edf3;
+  --bg: #0d1117;
+  --border: #3d444d;
+  --muted: #9198a1;
+  --surface: #151b23;
+  --hover-bg: #212830;
+  --selected-bg: #1f3a5f;
+  --selected-fg: #a5d6ff;
+  --accent: #4493f8;
+  --danger: #ff6b81;
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-fg: var(--fg);
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-border: var(--border);
+  --color-muted: var(--muted);
+  --color-hover: var(--hover-bg);
+  --color-selected-bg: var(--selected-bg);
+  --color-selected-fg: var(--selected-fg);
+  --color-accent: var(--accent);
+  --color-danger: var(--danger);
+}
+
+@theme {
+  --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --text-title: 1.25rem;
+  --radius-item: 6px;
+  --spacing-sidebar: 280px;
+  --spacing-preview-min: 240px;
+  --breakpoint-md: 768px;
+}
