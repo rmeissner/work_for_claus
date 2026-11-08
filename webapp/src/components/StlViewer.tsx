@@ -62,7 +62,8 @@ function StlMesh({ url }: StlViewerProps) {
     return loaded
   }, [loaded])
   return (
-    <mesh geometry={geometry}>
+    // STL files from slicers and CAD tools are Z-up; three.js is Y-up.
+    <mesh geometry={geometry} rotation={[-Math.PI / 2, 0, 0]}>
       <meshStandardMaterial color="#b0b4ba" roughness={0.6} metalness={0.1} />
     </mesh>
   )
