@@ -1,7 +1,6 @@
 import math
 
 import pytest
-
 from stlkit import bar, regular_polygon, ring, round_corners, star
 
 

@@ -37,7 +37,7 @@ def layout_on_plate(
     total_depth = sum(depths) + gap * (len(rows) - 1)
     result = []
     top = total_depth / 2
-    for row_parts, width, depth in zip(placed, widths, depths):
+    for row_parts, width, depth in zip(placed, widths, depths, strict=True):
         y = top - depth / 2
         result += [p.translate((-width / 2, y, 0)) for p in row_parts]
         top -= depth + gap

@@ -3,7 +3,6 @@ from pathlib import Path
 
 import numpy as np
 from manifold3d import Manifold
-
 from stlkit import extrude, star, write_stl
 
 
