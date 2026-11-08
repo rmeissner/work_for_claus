@@ -102,7 +102,28 @@ def test_parts_have_no_thin_walls(part):
     assert len(opened.decompose()) == 1
 
 
-def test_committed_stl_is_up_to_date(tmp_path):
-    fresh = tmp_path / "star-ornament.stl"
-    write_stl(generate.build_plate(), fresh, "star-ornament")
-    assert generate.OUTPUT.read_bytes() == fresh.read_bytes()
+def test_combined_is_both_parts_standing_on_the_plate_level():
+    combined = generate.build_combined()
+    part_a, part_b = generate.parts()
+    assert combined.volume() == pytest.approx(part_a.volume() + part_b.volume())
+    x0, y0, z0, x1, y1, z1 = combined.bounding_box()
+    assert z0 == pytest.approx(0)
+    assert all(
+        size < limit
+        for size, limit in zip(
+            (x1 - x0, y1 - y0, z1 - z0), (220, 220, 250), strict=True
+        )
+    )
+
+
+def test_committed_stls_are_up_to_date(tmp_path):
+    part_a, part_b = generate.parts()
+    for solid, committed in (
+        (generate.build_plate(), generate.OUTPUT),
+        (part_a, generate.PART_A_OUTPUT),
+        (part_b, generate.PART_B_OUTPUT),
+        (generate.build_combined(), generate.COMBINED_OUTPUT),
+    ):
+        fresh = tmp_path / committed.name
+        write_stl(solid, fresh, committed.stem)
+        assert committed.read_bytes() == fresh.read_bytes(), committed.name

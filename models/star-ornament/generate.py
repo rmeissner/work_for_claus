@@ -42,6 +42,9 @@ SLOT_WIDTH = THICKNESS + SLOT_CLEARANCE
 SPINE_WIDTH = SLOT_WIDTH + 2 * SPINE_WALL
 SLOT_MEETING = (OUTER_RADIUS - INNER_RADIUS) / 2  # y where the two slots meet
 OUTPUT = Path(__file__).with_name("star-ornament.stl")
+PART_A_OUTPUT = Path(__file__).with_name("part-a.stl")
+PART_B_OUTPUT = Path(__file__).with_name("part-b.stl")
+COMBINED_OUTPUT = Path(__file__).with_name("combined.stl")
 
 
 def outline() -> CrossSection:
@@ -110,9 +113,25 @@ def build_plate():
     return plate
 
 
+def build_combined():
+    """Both parts slotted together, standing on Z = 0. For previewing, not for printing."""
+    a, b = assembled()
+    star_3d = a + b
+    return star_3d.translate((0, 0, -star_3d.bounding_box()[2]))
+
+
 def main() -> None:
-    write_stl(build_plate(), OUTPUT, "star-ornament")
-    print(f"wrote {OUTPUT}")
+    part_a, part_b = parts()
+    assert_printable(part_a)
+    assert_printable(part_b)
+    for solid, path, name in (
+        (build_plate(), OUTPUT, "star-ornament"),
+        (part_a, PART_A_OUTPUT, "part-a"),
+        (part_b, PART_B_OUTPUT, "part-b"),
+        (build_combined(), COMBINED_OUTPUT, "combined"),
+    ):
+        write_stl(solid, path, name)
+        print(f"wrote {path}")
 
 
 if __name__ == "__main__":
