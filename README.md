@@ -58,3 +58,8 @@ pytest                             # run the tests of the toolkit and of all mod
 - Pytest runs in `importlib` mode so every model can have its own `test_generate.py`. Tests load their generator with `generate = load_script(Path(__file__).with_name("generate.py"))` (`from stlkit import load_script`).
 - Scripts add `tools/` to `sys.path` to import the toolkit, so nothing needs to be installed besides the requirements.
 - The generated `.stl` is committed, because the webapp shows it.
+
+## Contributing
+
+- Open a pull request against `main`; the description is pre-filled from `.github/pull_request_template.md`. Keep each PR to one purpose and delete the sections that don't apply.
+- `.github/CODEOWNERS` requests a review from every collaborator (GitHub skips the PR's author). A new collaborator has to be added to that file by hand.
