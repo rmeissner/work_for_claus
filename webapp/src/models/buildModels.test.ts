@@ -72,7 +72,7 @@ describe('buildModels', () => {
 describe('loadModels', () => {
   it('finds the sample models in the repository', () => {
     const models = loadModels()
-    expect(models.map((m) => m.slug)).toEqual(['calibration-cube', 'pyramid'])
+    expect(models.map((m) => m.slug)).toEqual(['calibration-cube', 'pyramid', 'star-ornament'])
     for (const model of models) expect(model.stlUrl).toMatch(/\.stl/)
   })
 })
