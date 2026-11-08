@@ -4,7 +4,7 @@ This repo contains 3D models for our printer Claus
 
 ## Webapp
 
-The `webapp/` folder contains a [Vite](https://vite.dev) + React + TypeScript app for browsing the models.
+The `webapp/` folder contains a [Vite](https://vite.dev) + React + TypeScript app for browsing the models. The header has a System / Light / Dark theme toggle; the choice is stored in `localStorage` (System follows the OS).
 
 Requirements: Node.js 26 (see `.nvmrc`).
 

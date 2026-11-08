@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes, useNavigate, useParams } from 'react-router'
 import { ModelDetails } from './components/ModelDetails'
 import { ModelList } from './components/ModelList'
+import { ThemeToggle } from './components/ThemeToggle'
 import { loadModels } from './models/loadModels'
 import type { Model } from './models/types'
 
@@ -37,8 +38,9 @@ function ModelRoute({ models }: { models: Model[] }) {
 function App({ models = repositoryModels }: { models?: Model[] }) {
   return (
     <div className="grid h-full grid-cols-[var(--spacing-sidebar)_minmax(0,1fr)] grid-rows-[auto_minmax(0,1fr)] [grid-template-areas:'header_main'_'sidebar_main'] max-md:h-auto max-md:min-h-full max-md:grid-cols-[minmax(0,1fr)] max-md:grid-rows-[auto_auto_1fr] max-md:[grid-template-areas:'header'_'sidebar'_'main']">
-      <header className="border-r border-b border-border px-4 py-3 [grid-area:header] max-md:border-r-0">
-        <h1 className="m-0 text-title">Work for Claus</h1>
+      <header className="flex items-center justify-between gap-2 border-r border-b border-border px-4 py-3 [grid-area:header] max-md:border-r-0">
+        <h1 className="m-0 text-title whitespace-nowrap">Work for Claus</h1>
+        <ThemeToggle />
       </header>
       <Routes>
         {models.length > 0 ? (
