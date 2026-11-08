@@ -1,0 +1,224 @@
+# Plan: Improve STL UX
+
+Component: `webapp/` (model data, details pane), `models/` (`project.json` files, star ornament generator), `README.md`.
+
+PR strategy: merge each
+
+---
+
+## Overview
+
+A model can only have one STL file today: if a folder has several, `buildModels()` uses the first one alphabetically (rmeissner/work_for_claus#5). Many prints have several parts, so this epic lets a model have any number of STL files and improves how they are shown:
+
+1. **Files in `project.json`:** every STL file of a model is listed, in order, in a new `files` key of its `project.json`. The webapp reads this list instead of picking one STL. This closes rmeissner/work_for_claus#5.
+2. **Carousel:** the preview becomes a hero-banner-style wheel. One file is shown at a time, round previous/next buttons with arrows sit on its left and right, and it loops (next on the last file goes to the first). It never switches on its own.
+3. **Downloads:** the details pane lists the model's files below the description, each as a download link. The first 3 are shown, the rest are behind a "Show N more" button.
+4. **Star ornament parts:** the star ornament generator also writes one STL per part and a `combined.stl` of the assembled star, so the first multi-file model exists.
+
+Phases 3, 4 and 5 only depend on phase 2 and can run in parallel.
+
+---
+
+## Architecture Decision
+
+- **`project.json` is the source of truth for files.** It gets a required, non-empty `files` array. Its order is the order of the carousel slides and of the download list. Each entry is an object with the file name and an optional label:
+
+  ```json
+  {
+    "name": "Star ornament",
+    "description": "…",
+    "files": [
+      { "file": "combined.stl", "name": "Assembled star" },
+      { "file": "star-ornament.stl", "name": "Print plate" },
+      { "file": "part-a.stl", "name": "Part A" },
+      { "file": "part-b.stl", "name": "Part B" }
+    ]
+  }
+  ```
+
+  `name` defaults to the file name. Only `.stl` files are allowed (the carousel can show every listed file).
+- **Validation (in `buildModels`, with zod):**
+  - `files` missing, empty, not an array, an entry without a string `file`, a `file` not ending in `.stl` (case-insensitive) or a duplicate `file` → `invalid project.json`, the model is skipped with a warning (same as an invalid `name` today).
+  - A listed file that isn't in the folder → warning, the file is dropped. If no file is left, the model is skipped.
+  - An STL in the folder that isn't listed → warning, the file is ignored.
+  - `file` must be a plain file name (no `/`), because `import.meta.glob` only picks up `models/*/*.stl`.
+- **Data model:** `Model.stlUrl: string` becomes `Model.files: ModelFile[]` with `ModelFile = { name: string; fileName: string; url: string }`. `files` is never empty.
+- **Viewer stays single-file.** `StlViewer` keeps taking one `url`. The new `StlCarousel` holds the current index and renders one `StlViewer` for the current file (`key` = url, so its error state resets). Only the visible file is loaded; `useLoader` caches files that were already shown.
+- **Downloads are plain links:** `<a href={url} download={fileName}>`. Vite already emits every STL as an asset, so nothing else is needed.
+
+### Alternatives Considered
+
+- **Use every `*.stl` in the folder (no list in `project.json`):** no way to set the order or labels. Rejected, the user wants the files listed in `project.json`.
+- **A plain string array (`"files": ["a.stl"]`):** shorter, but no labels. Objects with an optional `name` keep the short form cheap and allow nicer captions.
+- **Allow non-STL files (3MF, PDF) for download only:** rejected for now, `files` is STL-only. Easy to relax later by filtering the carousel to `.stl`.
+- **All parts in one scene, laid out side by side:** needs layout logic and makes single parts hard to inspect. The star ornament gets a `combined.stl` instead, which shows the assembled print.
+- **Mount all slides and animate between them:** one WebGL canvas per slide is heavy. Only the current slide is mounted; switching is instant.
+- **A carousel library (Embla, Swiper):** too much for prev/next with looping; a small component is easier to test.
+
+---
+
+## User Flow
+
+1. The user selects a model in the list. The preview shows its **first** file from `project.json`.
+2. If the model has more than one file, round **‹** and **›** buttons are shown on the left and right edge of the preview, and a caption below the canvas shows the file's name and position (`Part A · 3 / 4`) plus one dot per file.
+3. **›** shows the next file, **‹** the previous one. From the last file, **›** goes to the first; from the first, **‹** goes to the last. With the preview focused, the Left/Right arrow keys do the same. Nothing switches on its own.
+4. Selecting another model starts at its first file again.
+5. Below the description, a **Files** list shows the first 3 files as download links (label, file name). If there are more, a **Show N more** button reveals the rest (and turns into **Show less**).
+6. A model with a single file shows no buttons, no caption dots and a one-item file list.
+
+### Page Layout
+
+```
+┌───────────────┬──────────────────────────────────────────────┐
+│ Work for Claus│                                              │
+│      [theme]  │   ( ‹ )         3D preview            ( › )  │
+├───────────────┤                                              │
+│ Calibration   │                                              │
+│ Pyramid       │            Part A · 3 / 4   ○ ○ ● ○          │
+│▌Star ornament ├──────────────────────────────────────────────┤
+│               │ Star ornament                                │
+│               │ Slot-together Christmas star: …              │
+│               │                                              │
+│               │ Files                                        │
+│               │  ⤓ Assembled star   combined.stl             │
+│               │  ⤓ Print plate      star-ornament.stl        │
+│               │  ⤓ Part A           part-a.stl               │
+│               │  [ Show 1 more ]                             │
+└───────────────┴──────────────────────────────────────────────┘
+```
+
+---
+
+## Tech Specs
+
+### Types (`webapp/src/models/types.ts`)
+
+```ts
+export interface ModelFile {
+  /** Label from project.json, or the file name. */
+  name: string
+  /** File name in the model folder, used as the download name. */
+  fileName: string
+  url: string
+}
+
+export interface Model {
+  slug: string
+  name: string
+  description: string
+  /** In project.json order; never empty. */
+  files: ModelFile[]
+}
+```
+
+### `buildModels` (`webapp/src/models/buildModels.ts`)
+
+- `projectSchema` gains `files: z.array(z.object({ file, name? })).min(1)` with the checks listed above.
+- Builds `files` from the list, looking up each `models/<slug>/<file>` in the glob result.
+- Removes the "several STL files" warning and the TODO.
+
+Tests (`buildModels.test.ts`):
+- keeps the `project.json` order and uses `name` or falls back to the file name;
+- skips a `project.json` with missing/empty `files`, a non-`.stl` entry, a path with `/`, a duplicate;
+- drops a listed file that doesn't exist (warning), skips the model when none is left;
+- warns about an unlisted STL;
+- `loadModels` test: every repository model has at least one file and every url matches `.stl`.
+
+### `StlCarousel` (`webapp/src/components/StlCarousel.tsx`)
+
+- Props: `files: ModelFile[]`. State: current index. `ModelDetails` renders it with `key={model.slug}` so the index resets per model.
+- A `section` with `aria-roledescription="carousel"` and `aria-label="Model files"`; the slide has `aria-roledescription="slide"` and `aria-label="3 of 4: Part A"`.
+- Round buttons (`rounded-full`, absolutely positioned, vertically centered, over the canvas) with `aria-label="Previous file"` / `"Next file"` and an inline SVG chevron. Hidden when there is one file.
+- Index changes use modulo: `(index + 1) % length`, `(index - 1 + length) % length`.
+- Left/Right arrow keys on the carousel section (`tabIndex={0}`) move too, but not while the pointer drags the canvas (keys only, OrbitControls doesn't use them).
+- Caption: name, `index + 1 / length`, and dot buttons (`aria-label="Show Part B"`, `aria-current` on the active one) to jump to a file.
+- No timers.
+
+Tests (`StlCarousel.test.tsx`, with `StlViewer` mocked like in `App.test.tsx`): shows the first file; next/previous move and loop in both directions; arrow keys; dots jump; no buttons for one file; the index resets when the `key` changes.
+
+### `ModelFiles` (`webapp/src/components/ModelFiles.tsx`)
+
+- Props: `files: ModelFile[]`. Shows a `Files` heading and a list of `<a href={url} download={fileName}>` with the label and the file name.
+- The first 3 are always shown. With more, a button `Show N more` / `Show less` (`aria-expanded`, `aria-controls`) toggles the rest. `VISIBLE_FILES = 3`.
+- Rendered in `ModelDetails` below the description.
+
+Tests (`ModelFiles.test.tsx`): links have the right `href` and `download`; with ≤ 3 files there is no button; with 5 files only 3 links are shown until the button is clicked, then 5, and the label switches to `Show less`.
+
+### Star ornament (`models/star-ornament/`)
+
+- `generate.py` writes, besides the plate `star-ornament.stl`:
+  - `part-a.stl` and `part-b.stl`: each part on its own, flat on Z = 0 (printable, `assert_printable`);
+  - `combined.stl`: the assembled star from `assembled()` (part B rotated 90°), both parts in one STL, standing on Z = 0. This one is for previewing, not for printing.
+- `project.json` lists them: combined, plate, part A, part B (order taken from this list).
+- `test_generate.py`: the committed-STL test checks all four files; part STLs are printable; `combined.stl`'s volume equals the sum of both parts (they don't overlap) and it fits the build volume.
+
+### README
+
+"Adding a model": replace "exactly one `.stl` file" with the `files` list, its order, the optional `name`, STL-only, and the warnings for missing/unlisted files.
+
+---
+
+## Implementation Phases
+
+### Phase 1 — Plan
+
+This file.
+
+### Phase 2 — List model files in `project.json`
+
+**Depends on:** 1. **Parallel:** no.
+
+Closes rmeissner/work_for_claus#5 (data side).
+
+- `webapp/src/models/types.ts`, `buildModels.ts`, `buildModels.test.ts`
+- `models/*/project.json`: add `files` (calibration cube, pyramid, star ornament with its current single STL)
+- `ModelDetails.tsx`: pass `model.files[0].url` to `StlViewer` (temporary, until phase 3)
+- Test fixtures using `stlUrl` (`App.test.tsx`, `ModelList.test.tsx`) → `files`
+- README "Adding a model"
+
+Estimate: ~200 lines, 9 files.
+
+### Phase 3 — STL carousel
+
+**Depends on:** 2. **Parallel:** with 4 and 5.
+
+- `webapp/src/components/StlCarousel.tsx`, `StlCarousel.test.tsx`
+- `ModelDetails.tsx`: render `StlCarousel` instead of `StlViewer`
+- Add a screenshot to the PR description (e.g. with a temporary multi-file model, or after phase 5 is merged)
+
+Estimate: ~220 lines, 3 files.
+
+### Phase 4 — Downloadable file list
+
+**Depends on:** 2. **Parallel:** with 3 and 5.
+
+- `webapp/src/components/ModelFiles.tsx`, `ModelFiles.test.tsx`
+- `ModelDetails.tsx`: render `ModelFiles` below the description
+
+Estimate: ~150 lines, 3 files. Phases 3 and 4 both touch `ModelDetails.tsx` with a small change; whichever merges second rebases.
+
+### Phase 5 — Star ornament part files
+
+**Depends on:** 2. **Parallel:** with 3 and 4.
+
+- `models/star-ornament/generate.py`, `test_generate.py`, `project.json`
+- Generated `part-a.stl`, `part-b.stl`, `combined.stl` (not counted for review size)
+
+Estimate: ~80 lines of code and tests.
+
+### Phase 6 — Cleanup
+
+**Depends on:** 3, 4, 5. **Parallel:** no.
+
+- Remove `epics/2026_11_08_improve_stl_ux.md`.
+
+---
+
+## Open Questions and Assumptions
+
+- **Title:** "SLT" in the request is read as "STL".
+- **Star ornament files:** read as "keep the print plate, add one STL per part and a `combined.stl` of the assembled star". The order (combined first, so the preview opens on the finished star) is a suggestion; change it in `project.json`.
+- **`combined.stl` is not a print file:** it is the assembled 3D star (the slot clearance leaves the parts unconnected); its label says it is the assembled star.
+- **Labels:** `name` in a `files` entry is optional; the existing single-file models don't set it.
+- **Strict `files`:** a `project.json` without `files` makes the model invalid. All models in the repository are migrated in phase 2, so nothing disappears.
+- **No transition animation** between slides; can be added later with a CSS fade if wanted.
