@@ -11,7 +11,7 @@ PR strategy: merge each
 A model can only have one STL file today: if a folder has several, `buildModels()` uses the first one alphabetically (rmeissner/work_for_claus#5). Many prints have several parts, so this epic lets a model have any number of STL files and improves how they are shown:
 
 1. **Files in `project.json`:** every STL file of a model is listed, in order, in a new `files` key of its `project.json`. The webapp reads this list instead of picking one STL. This closes rmeissner/work_for_claus#5.
-2. **Carousel:** the preview becomes a hero-banner-style wheel. One file is shown at a time, round previous/next buttons with arrows sit on its left and right, and it loops (next on the last file goes to the first). It never switches on its own.
+2. **Carousel:** the preview becomes a hero-banner-style wheel. One file is shown at a time. Below it, a row of dots marks the files, with round previous/next buttons with arrows on either side of the dots. It loops (next on the last file goes to the first). It never switches on its own.
 3. **Downloads:** the details pane lists the model's files below the description, each as a download link. The first 3 are shown, the rest are behind a "Show N more" button.
 4. **Star ornament parts:** the star ornament generator also writes one STL per part and a `combined.stl` of the assembled star, so the first multi-file model exists.
 
@@ -49,7 +49,7 @@ Phases 3, 4 and 5 only depend on phase 2 and can run in parallel.
 ### Alternatives Considered
 
 - **Use every `*.stl` in the folder (no list in `project.json`):** no way to set the order or labels. Rejected, the user wants the files listed in `project.json`.
-- **A plain string array (`"files": ["a.stl"]`):** shorter, but no labels. Objects with an optional `name` keep the short form cheap and allow nicer captions.
+- **A plain string array (`"files": ["a.stl"]`):** shorter, but no labels. Objects with an optional `name` keep the short form cheap and allow nicer labels in the download list.
 - **Allow non-STL files (3MF, PDF) for download only:** rejected for now, `files` is STL-only. Easy to relax later by filtering the carousel to `.stl`.
 - **All parts in one scene, laid out side by side:** needs layout logic and makes single parts hard to inspect. The star ornament gets a `combined.stl` instead, which shows the assembled print.
 - **Mount all slides and animate between them:** one WebGL canvas per slide is heavy. Only the current slide is mounted; switching is instant.
@@ -60,21 +60,21 @@ Phases 3, 4 and 5 only depend on phase 2 and can run in parallel.
 ## User Flow
 
 1. The user selects a model in the list. The preview shows its **first** file from `project.json`.
-2. If the model has more than one file, round **‹** and **›** buttons are shown on the left and right edge of the preview, and a caption below the canvas shows the file's name and position (`Part A · 3 / 4`) plus one dot per file.
+2. If the model has more than one file, a row below the canvas shows a round **‹** button, one dot per file (the current one filled) and a round **›** button. There is no title or counter; hovering a dot shows its file's name as a tooltip. Up to 2 dots are shown on each side of the current one. If more files lie beyond that in a direction, the outermost visible dot on that side is drawn smaller, to show that more are coming.
 3. **›** shows the next file, **‹** the previous one. From the last file, **›** goes to the first; from the first, **‹** goes to the last. With the preview focused, the Left/Right arrow keys do the same. Nothing switches on its own.
 4. Selecting another model starts at its first file again.
 5. Below the description, a **Files** list shows the first 3 files as download links (label, file name). If there are more, a **Show N more** button reveals the rest (and turns into **Show less**).
-6. A model with a single file shows no buttons, no caption dots and a one-item file list.
+6. A model with a single file shows no buttons, no dots and a one-item file list.
 
 ### Page Layout
 
 ```
 ┌───────────────┬──────────────────────────────────────────────┐
 │ Work for Claus│                                              │
-│      [theme]  │   ( ‹ )         3D preview            ( › )  │
+│      [theme]  │                 3D preview                   │
 ├───────────────┤                                              │
 │ Calibration   │                                              │
-│ Pyramid       │            Part A · 3 / 4   ○ ○ ● ○          │
+│ Pyramid       │           ( ‹ )  ○ ○ ● ○  ( › )              │
 │▌Star ornament ├──────────────────────────────────────────────┤
 │               │ Star ornament                                │
 │               │ Slot-together Christmas star: …              │
@@ -128,13 +128,15 @@ Tests (`buildModels.test.ts`):
 
 - Props: `files: ModelFile[]`. State: current index. `ModelDetails` renders it with `key={model.slug}` so the index resets per model.
 - A `section` with `aria-roledescription="carousel"` and `aria-label="Model files"`; the slide has `aria-roledescription="slide"` and `aria-label="3 of 4: Part A"`.
-- Round buttons (`rounded-full`, absolutely positioned, vertically centered, over the canvas) with `aria-label="Previous file"` / `"Next file"` and an inline SVG chevron. Hidden when there is one file.
+- A control row below the canvas: round **‹** button, the dots, round **›** button. The buttons are `rounded-full` with `aria-label="Previous file"` / `"Next file"` and an inline SVG chevron. The whole row is hidden when there is one file.
 - Index changes use modulo: `(index + 1) % length`, `(index - 1 + length) % length`.
 - Left/Right arrow keys on the carousel section (`tabIndex={0}`) move too, but not while the pointer drags the canvas (keys only, OrbitControls doesn't use them).
-- Caption: name, `index + 1 / length`, and dot buttons (`aria-label="Show Part B"`, `aria-current` on the active one) to jump to a file.
+- No caption: file names only appear in the download list and in the dots' `title` (hover tooltip) and `aria-label`.
+- Dots are buttons (`aria-label="Show Part B"`, `title="Part B"`, `aria-current` on the active one) that jump to a file.
+- **Dot window:** a pure helper `visibleDots(index, length)` returns the dots to render with a size each. It includes the files from `index - 2` to `index + 2`, clamped to the list (by position, not wrapping around). On a side where more files lie beyond the window, the outermost dot is `small`. Examples for 7 files (0-based index): current 0 → `●○○`, the last one small; current 3 → `○○●○○`, both ends small; current 6 → `○○●`, the first one small. With 5 or fewer files every dot fits and none is small.
 - No timers.
 
-Tests (`StlCarousel.test.tsx`, with `StlViewer` mocked like in `App.test.tsx`): shows the first file; next/previous move and loop in both directions; arrow keys; dots jump; no buttons for one file; the index resets when the `key` changes.
+Tests (`StlCarousel.test.tsx`, with `StlViewer` mocked like in `App.test.tsx`): shows the first file; next/previous move and loop in both directions; arrow keys; dots jump and carry the file name as `title`; no title or counter text is rendered; no controls for one file; the index resets when the `key` changes. `visibleDots` gets table tests: few files (all full size), current at the start, in the middle and at the end of a long list.
 
 ### `ModelFiles` (`webapp/src/components/ModelFiles.tsx`)
 
