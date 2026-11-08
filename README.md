@@ -29,17 +29,18 @@ models/
     └── cube.stl
 ```
 
-- `project.json` holds a non-empty `name` and a plain-text `description`; other keys are ignored:
+- `project.json` holds a non-empty `name`, a plain-text `description` and a non-empty `files` list; other keys are ignored:
 
   ```json
   {
     "name": "Calibration cube",
-    "description": "20 mm cube to calibrate X/Y/Z steps."
+    "description": "20 mm cube to calibrate X/Y/Z steps.",
+    "files": [{ "file": "cube.stl" }]
   }
   ```
 
-- Put exactly one `.stl` file in the folder. If there are several, the first one in alphabetical order is used.
-- Folders with a missing or invalid `project.json`, or without an STL file, are skipped with a warning in the browser console.
+- `files` lists the model's STL files in the order they are shown. Each entry has the file name in `file` (a plain `.stl` file name in the model's folder, no duplicates) and an optional `name` as label; the label defaults to the file name.
+- Folders with a missing or invalid `project.json` are skipped with a warning in the browser console. A listed file that is not in the folder is dropped with a warning (the model is skipped if none is left), and an STL file that is not listed is ignored with a warning.
 
 ## Generating models
 

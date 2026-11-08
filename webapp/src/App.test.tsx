@@ -10,8 +10,8 @@ vi.mock('./components/StlViewer', () => ({
 import type { Model } from './models/types'
 
 const models: Model[] = [
-  { slug: 'cube', name: 'Cube', description: 'A cube.', stlUrl: '/cube.stl' },
-  { slug: 'pyramid', name: 'Pyramid', description: 'A pyramid.\nPointy.', stlUrl: '/p.stl' },
+  { slug: 'cube', name: 'Cube', description: 'A cube.', files: [{ name: 'cube.stl', fileName: 'cube.stl', url: '/cube.stl' }] },
+  { slug: 'pyramid', name: 'Pyramid', description: 'A pyramid.\nPointy.', files: [{ name: 'p.stl', fileName: 'p.stl', url: '/p.stl' }] },
 ]
 
 const selectedOption = () => screen.getByRole('option', { selected: true })

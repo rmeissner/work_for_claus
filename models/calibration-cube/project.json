@@ -1,4 +1,9 @@
 {
   "name": "Calibration cube",
-  "description": "20 mm cube to calibrate X/Y/Z steps."
+  "description": "20 mm cube to calibrate X/Y/Z steps.",
+  "files": [
+    {
+      "file": "cube.stl"
+    }
+  ]
 }

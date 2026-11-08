@@ -14,7 +14,8 @@ export function ModelDetails({ model }: { model: Model }) {
       <div className="min-h-preview-min flex-1 border-b border-border bg-surface max-md:h-[50vh] max-md:flex-none" data-testid="model-preview">
         <Suspense fallback={<p className="m-0 grid h-full place-items-center text-muted">Loading viewer…</p>}>
           {/* A key per model resets the viewer's error state on selection. */}
-          <StlViewer key={model.slug} url={model.stlUrl} />
+          {/* Temporary: shows the first file only, until the carousel lands. */}
+          <StlViewer key={model.slug} url={model.files[0].url} />
         </Suspense>
       </div>
       <div className="px-5 py-4">
