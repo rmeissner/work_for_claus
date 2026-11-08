@@ -1,0 +1,45 @@
+name: Webapp
+
+on:
+  pull_request:
+    paths:
+      - 'webapp/**'
+      - 'models/**'
+      - '.nvmrc'
+      - '.github/workflows/webapp.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'webapp/**'
+      - 'models/**'
+      - '.nvmrc'
+      - '.github/workflows/webapp.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Lint, type check, test and build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: webapp
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: webapp/package-lock.json
+
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
