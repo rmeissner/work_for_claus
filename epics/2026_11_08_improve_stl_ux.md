@@ -14,8 +14,9 @@ A model can only have one STL file today: if a folder has several, `buildModels(
 2. **Carousel:** the preview becomes a hero-banner-style wheel. One file is shown at a time. Below it, a row of dots marks the files, with round previous/next buttons with arrows on either side of the dots. It loops (next on the last file goes to the first). It never switches on its own.
 3. **Downloads:** the details pane lists the model's files below the description, each as a download link. The first 3 are shown, the rest are behind a "Show N more" button.
 4. **Star ornament parts:** the star ornament generator also writes one STL per part and a `combined.stl` of the assembled star, so the first multi-file model exists.
+5. **Mobile model picker:** on small screens the model list collapses into one bar showing the current model. Tapping the bar opens the list as a sheet over the page. With many models the list no longer pushes the preview down.
 
-Phases 3, 4 and 5 only depend on phase 2 and can run in parallel.
+Phases 3, 4 and 5 only depend on phase 2 and can run in parallel. Phase 6 only touches the layout and can run in parallel with 5.
 
 ---
 
@@ -65,6 +66,13 @@ Phases 3, 4 and 5 only depend on phase 2 and can run in parallel.
 4. Selecting another model starts at its first file again.
 5. Below the description, a **Files** list shows the first 3 files as download links (label, file name). If there are more, a **Show N more** button reveals the rest (and turns into **Show less**).
 6. A model with a single file shows no buttons, no dots and a one-item file list.
+
+**On mobile (below the `md` breakpoint):**
+
+1. Below the header there is one bar with the current model's name and a chevron (`Star ornament ▾`). The list itself is hidden, so the preview starts right below the bar, however many models there are.
+2. Tapping the bar opens the model list as a sheet over the page, under the bar: at most 70% of the screen height, scrolling inside, with a dimmed backdrop. Focus moves to the selected model, and the arrow keys work as on desktop.
+3. Picking a model navigates to it and closes the sheet. Tapping the backdrop, tapping the bar again or pressing Escape closes it without a change. Focus returns to the bar.
+4. On desktop nothing changes: the bar is hidden and the list is always visible in the sidebar.
 
 ### Page Layout
 
@@ -154,6 +162,23 @@ Tests (`ModelFiles.test.tsx`): links have the right `href` and `download`; with 
 - `project.json` lists them: combined, plate, part A, part B (order taken from this list).
 - `test_generate.py`: the committed-STL test checks all four files; part STLs are printable; `combined.stl`'s volume equals the sum of both parts (they don't overlap) and it fits the build volume.
 
+### Mobile model picker (`webapp/src/components/ModelPicker.tsx`)
+
+- Props: the same as `ModelList` (`models`, `selectedSlug`, `onSelect`). It wraps `ModelList` and replaces it in `App.tsx`'s sidebar `nav`.
+- State: `open` (boolean), closed by default.
+- Toggle button: `md:hidden`, full width, shows the selected model's name and a chevron that turns when open. It has `aria-expanded` and `aria-controls` pointing to the list wrapper, and `aria-label` "Choose model (current: <name>)".
+- List wrapper: always visible from `md` up (`md:block`, laid out as today). Below `md` it is hidden unless `open`. When open, it is positioned absolutely under the bar (`max-h-[70vh] overflow-y-auto`, surface background, shadow, above the main area), with a fixed backdrop behind it that closes on click.
+- `onSelect` closes the picker and calls the parent's `onSelect`. Escape closes it and moves focus back to the toggle. When it opens, focus moves to the selected option.
+- `App.tsx`: the sidebar drops `max-md:max-h-[35vh]` and its scrolling on mobile, because only the bar takes space there. It gets `relative`, so the sheet is placed under the bar.
+
+Tests (`ModelPicker.test.tsx`; jsdom ignores media queries, so they check behavior, not visibility):
+- closed by default, with `aria-expanded="false"` and the current name on the toggle;
+- the toggle opens it and focuses the selected option;
+- picking a model calls `onSelect` and closes it;
+- Escape and the backdrop close it without calling `onSelect`, and Escape returns focus to the toggle.
+
+`App.test.tsx` keeps passing unchanged, because the list stays in the DOM.
+
 ### README
 
 "Adding a model": replace "exactly one `.stl` file" with the `files` list, its order, the optional `name`, STL-only, and the warnings for missing/unlisted files.
@@ -208,9 +233,19 @@ Estimate: ~150 lines, 3 files. Phases 3 and 4 both touch `ModelDetails.tsx` with
 
 Estimate: ~80 lines of code and tests.
 
-### Phase 6 — Cleanup
+### Phase 6 — Mobile model picker
 
-**Depends on:** 3, 4, 5. **Parallel:** no.
+**Depends on:** 1 (only the existing layout). **Parallel:** with 5.
+
+- `webapp/src/components/ModelPicker.tsx`, `ModelPicker.test.tsx`
+- `webapp/src/App.tsx`: render `ModelPicker` in the sidebar, adjust the mobile sidebar classes
+- Add a phone-sized screenshot (closed and open) to the PR description, e.g. with a temporary model list of ~20 entries.
+
+Estimate: ~180 lines, 3 files.
+
+### Phase 7 — Cleanup
+
+**Depends on:** 3, 4, 5, 6. **Parallel:** no.
 
 - Remove `epics/2026_11_08_improve_stl_ux.md`.
 
@@ -224,3 +259,4 @@ Estimate: ~80 lines of code and tests.
 - **Labels:** `name` in a `files` entry is optional; the existing single-file models don't set it.
 - **Strict `files`:** a `project.json` without `files` makes the model invalid. All models in the repository are migrated in phase 2, so nothing disappears.
 - **No transition animation** between slides; can be added later with a CSS fade if wanted.
+- **Mobile picker:** desktop stays as it is. There is no search field yet; it can be added later if the list gets very long.
