@@ -11,7 +11,7 @@ PR strategy: merge each
 The repository has no PR template, nobody is requested to review automatically, and the CI workflows only run when certain paths change. A check that does not run never reports a status, so it can't be made required in a GitHub ruleset (a PR that skips it would wait forever). This epic makes the repository ready to be protected by rules:
 
 1. **PR template and reviewers:** a `.github/pull_request_template.md` that follows the [safenet template](https://github.com/safe-research/safenet/blob/main/.github/pull_request_template.md) without the CLA section, and a `.github/CODEOWNERS` that requests a review from every collaborator.
-2. **Always-running checks:** both workflows are merged into one `CI` workflow without path filters, and a final `CI result` job sums up all other jobs. A ruleset requires only `CI result`.
+2. **Always-running checks:** both workflows lose their path filters and get short names (`CI - Models`, `CI - Webapp`), so a ruleset can require them.
 3. **Hardened workflows:** actions pinned to commit SHAs, least-privilege tokens, no persisted git credentials, and a job that lints the workflows themselves (actionlint and zizmor).
 4. **Python lint:** a ruff configuration and a one-time mechanical cleanup of the Python code (imports, formatting).
 5. **Python lint in CI:** ruff runs in CI, so the code stays clean.
@@ -23,22 +23,18 @@ Phases 2 and 5 (template, ruff cleanup) don't depend on anything and can run in 
 ## Architecture Decision
 
 - **Reviewers come from CODEOWNERS, not from the template.** A PR template is only text: it can't request reviewers. GitHub requests a review from the code owners of the changed files when a PR is opened (for PRs targeting a branch that has the file). This is a personal repository, so there are no teams; CODEOWNERS lists every collaborator with write access (`@rmeissner @rimeissner-ai @rimeissner-qa`) for `*`. GitHub never asks a PR's author to review it, so the author is skipped. A new collaborator has to be added to the file by hand.
-- **One workflow, one required check.** `.github/workflows/ci.yml` replaces `models.yml` and `webapp.yml`. It runs on every `pull_request` and on `push` to `main`, without `paths` filters. Its jobs:
-  - `models`: pytest (today's `models.yml` job).
-  - `webapp`: lint, type check, test and build (today's `webapp.yml` job).
-  - `workflows` (phase 4): actionlint and zizmor.
-  - `result`, named `CI result`: `needs` all other jobs, runs with `if: always()`, and fails unless every needed job's result is `success`. This is the only check the ruleset requires, so adding or renaming a job later needs no change to the ruleset.
+- **Two workflows, always running.** `models.yml` (`CI - Models`) and `webapp.yml` (`CI - Webapp`) run on every `pull_request` and on `push` to `main`, without `paths` filters. Each has one job, named like its workflow; the job names are the checks the ruleset requires. Phase 4 adds a third workflow, `workflows.yml` (`CI - Workflows`), for actionlint and zizmor. A new or renamed job has to be added to the ruleset by hand (the reviewer prefers this over one workflow with a summary job).
 - **Hardening:**
   - Every `uses:` is pinned to a full commit SHA with the version as a comment (`actions/checkout@<sha> # v5.x.y`), like the `rimeissner-ai/agents` workflows.
   - `permissions: {}` at the top of the workflow, `contents: read` per job.
   - `actions/checkout` with `persist-credentials: false`.
-  - `actionlint` checks syntax and expressions, `zizmor` checks for security problems (template injection, unpinned actions, excessive permissions). Both run in the `workflows` job with pinned versions.
-- **Ruff for Python.** `ruff.toml` at the repository root, target Python 3.13, rules `E, F, W, I, B, UP, RUF` with `E501` ignored (the formatter handles line length). `ruff` is pinned in `tools/requirements.txt` next to pytest. CI runs `ruff check` and `ruff format --check` in the `models` job, so no second Python setup is needed.
+  - `actionlint` checks syntax and expressions, `zizmor` checks for security problems (template injection, unpinned actions, excessive permissions). Both run in the `CI - Workflows` job with pinned versions.
+- **Ruff for Python.** `ruff.toml` at the repository root, target Python 3.13, rules `E, F, W, I, B, UP, RUF` with `E501` ignored (the formatter handles line length). `ruff` is pinned in `tools/requirements.txt` next to pytest. CI runs `ruff check` and `ruff format --check` in the `CI - Models` job, so no second Python setup is needed.
 
 ### Alternatives Considered
 
 - **Keep path filters and skip jobs with a "changes" job (e.g. `dorny/paths-filter`):** saves a minute or two of CI on unrelated PRs, but adds a third-party action and logic that can skip a check by mistake. Both jobs take about a minute, so always running them is simpler.
-- **Keep two workflows without path filters and require each job:** works, but every new or renamed job means changing the ruleset. The `CI result` job keeps the required checks stable.
+- **One `CI` workflow with a `CI result` job that sums up all jobs:** the ruleset would only name one check, but the reviewer finds two workflows cleaner. Rejected in review of phase 3.
 - **Request reviewers with an action or the PR tooling:** needs a token and runs after the PR is opened; CODEOWNERS is built in.
 - **Dependabot for SHA-pinned actions and dependencies:** not part of this epic (see Open Questions).
 - **Run ruff in its own job:** a separate Python setup for a check that takes a second; the `models` job already has Python and the requirements installed.
@@ -58,36 +54,20 @@ The safenet template without the trailing `---` and `## CLA signature` section: 
 * @rmeissner @rimeissner-ai @rimeissner-qa
 ```
 
-### `.github/workflows/ci.yml`
+### Workflows
+
+`models.yml` and `webapp.yml` keep their steps, `permissions` and `concurrency`; only the triggers and names change:
 
 ```yaml
-name: CI
+name: CI - Models
 
 on:
   pull_request:
   push:
     branches: [main]
-
-permissions: {}
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
-jobs:
-  models:   # name: Test the STL toolkit and model generators
-  webapp:   # name: Lint, type check, test and build
-  result:
-    name: CI result
-    if: always()
-    needs: [models, webapp]   # + workflows (phase 4)
-    runs-on: ubuntu-latest
-    steps:
-      - if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') || contains(needs.*.result, 'skipped')
-        run: exit 1
 ```
 
-`needs.*.result` is passed to the step through `if:` only (no `${{ }}` in `run:`), so zizmor finds no template injection.
+with the job's `name: CI - Models` (and the same for `CI - Webapp`). `workflows.yml` (phase 4) follows the same pattern.
 
 ### Ruff
 
@@ -104,7 +84,7 @@ Today's code has 6 auto-fixable findings (unsorted imports, unused `noqa`), one 
 
 ### `README.md`
 
-- A short **Contributing** section: PRs use the template, CODEOWNERS requests reviewers, the `CI result` check must pass.
+- A short **Contributing** section: PRs use the template, CODEOWNERS requests reviewers, the `CI - …` checks must pass.
 - The **Generating models** section mentions `ruff check` and `ruff format` (phase 6).
 
 ### Repository settings (done by the owner, not in a PR)
@@ -112,7 +92,7 @@ Today's code has 6 auto-fixable findings (unsorted imports, unused `noqa`), one 
 After phase 3 is merged, a ruleset on `main` should:
 
 - require a pull request (optionally with 1 approval and code owner review),
-- require the status check `CI result`,
+- require the status checks `CI - Models` and `CI - Webapp` (and `CI - Workflows` after phase 4),
 - block force pushes and deletion.
 
 ---
@@ -128,7 +108,7 @@ This file. No code.
 **Depends on:** 1 (merged plan). **Parallel:** yes, with phases 3 and 5.
 
 - `.github/pull_request_template.md`, `.github/CODEOWNERS`.
-- `README.md`: Contributing section (template and reviewers; the `CI result` sentence is added in phase 3).
+- `README.md`: Contributing section (template and reviewers; the sentence about the checks is added in phase 3).
 
 ~50 lines, 3 files.
 
@@ -136,23 +116,23 @@ This file. No code.
 
 **Depends on:** 1. **Parallel:** yes, with phases 2 and 5.
 
-- Add `.github/workflows/ci.yml` with the `models`, `webapp` and `result` jobs (same steps as today), no path filters.
-- Delete `.github/workflows/models.yml` and `.github/workflows/webapp.yml`.
-- `README.md`: say that `CI result` is the check to require (add a Contributing section if phase 2 isn't merged yet).
+- `models.yml`, `webapp.yml`: drop the `paths` filters, rename the workflows and jobs to `CI - Models` and `CI - Webapp`.
+- `README.md`: say that these checks must pass.
 
-The PR's own run shows all three jobs, also for a PR that only changes Markdown.
+Both checks run on the PR itself, although it changes no code.
 
-~80 lines, 4 files.
+~30 lines, 4 files.
 
 ### Phase 4 — Harden the workflows
 
 **Depends on:** 3. **Parallel:** yes, with phase 5.
 
-- `ci.yml`: pin every action to a commit SHA with a version comment, `permissions: {}` at the top and `contents: read` per job, `persist-credentials: false` on checkout.
-- Add the `workflows` job (actionlint and zizmor, pinned versions) and add it to `result`'s `needs`.
+- `models.yml`, `webapp.yml`: pin every action to a commit SHA with a version comment, `permissions: {}` at the top and `contents: read` per job, `persist-credentials: false` on checkout.
+- Add `workflows.yml` (`CI - Workflows`: actionlint and zizmor, pinned versions, hardened the same way).
+- `README.md`: add `CI - Workflows` to the checks that must pass.
 - Fix whatever zizmor reports.
 
-~50 lines, 1 file.
+~70 lines, 4 files.
 
 ### Phase 5 — Ruff config and cleanup
 
@@ -168,7 +148,7 @@ The PR's own run shows all three jobs, also for a PR that only changes Markdown.
 
 **Depends on:** 4, 5. **Parallel:** no.
 
-- `ci.yml`: `ruff check` and `ruff format --check` steps in the `models` job.
+- `models.yml`: `ruff check` and `ruff format --check` steps in the `CI - Models` job.
 - `README.md`: mention ruff in Generating models.
 
 ~15 lines, 2 files.
@@ -187,4 +167,4 @@ The PR's own run shows all three jobs, also for a PR that only changes Markdown.
 - **Ruleset:** setting it up needs admin rights, so the owner does it on GitHub after phase 3 (see Repository settings). Until then, nothing changes for merging.
 - **Dependabot:** not included. Without it, SHA-pinned actions and ruff only change when someone bumps them by hand. A later PR can add `.github/dependabot.yml` (GitHub Actions, npm, pip).
 - **Conflicts with open PRs:** phase 5 reformats Python files that open phases of other epics change (e.g. the 24-point star epic). Whichever PR merges second has to rebase; for a formatting-only conflict, re-running `ruff format` after the rebase resolves it. If the other epics are close to done, phase 5 can wait for them.
-- **No merge queue:** `ci.yml` doesn't listen to `merge_group`. If a merge queue is enabled later, add that trigger.
+- **No merge queue:** the workflows don't listen to `merge_group`. If a merge queue is enabled later, add that trigger.

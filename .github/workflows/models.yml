@@ -1,19 +1,9 @@
-name: Models
+name: CI - Models
 
 on:
   pull_request:
-    paths:
-      - 'tools/**'
-      - 'models/**'
-      - 'pytest.ini'
-      - '.github/workflows/models.yml'
   push:
     branches: [main]
-    paths:
-      - 'tools/**'
-      - 'models/**'
-      - 'pytest.ini'
-      - '.github/workflows/models.yml'
 
 permissions:
   contents: read
@@ -24,7 +14,7 @@ concurrency:
 
 jobs:
   test:
-    name: Test the STL toolkit and model generators
+    name: CI - Models
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5

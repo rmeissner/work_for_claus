@@ -1,19 +1,9 @@
-name: Webapp
+name: CI - Webapp
 
 on:
   pull_request:
-    paths:
-      - 'webapp/**'
-      - 'models/**'
-      - '.nvmrc'
-      - '.github/workflows/webapp.yml'
   push:
     branches: [main]
-    paths:
-      - 'webapp/**'
-      - 'models/**'
-      - '.nvmrc'
-      - '.github/workflows/webapp.yml'
 
 permissions:
   contents: read
@@ -24,7 +14,7 @@ concurrency:
 
 jobs:
   check:
-    name: Lint, type check, test and build
+    name: CI - Webapp
     runs-on: ubuntu-latest
     defaults:
       run:
