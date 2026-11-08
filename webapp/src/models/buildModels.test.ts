@@ -41,7 +41,10 @@ describe('buildModels', () => {
       { [`${root}/cube/cube.stl`]: '/cube.stl' },
     )
     expect(models).toEqual([])
-    expect(warn).toHaveBeenCalledWith(expect.stringContaining('invalid project.json'))
+    expect(warn).toHaveBeenCalledWith(
+      expect.stringContaining('invalid project.json'),
+      expect.any(String),
+    )
   })
 
   it('uses the first STL alphabetically when a folder has several', () => {

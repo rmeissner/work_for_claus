@@ -1,3 +1,4 @@
+import { z } from 'zod'
 import type { Model } from './types'
 
 /** Returns the model folder name for a glob key like `../../../models/<slug>/file`. */
@@ -5,11 +6,11 @@ function slugOf(path: string): string | undefined {
   return path.match(/(?:^|\/)models\/([^/]+)\/[^/]+$/)?.[1]
 }
 
-function isProject(value: unknown): value is { name: string; description: string } {
-  if (typeof value !== 'object' || value === null) return false
-  const { name, description } = value as Record<string, unknown>
-  return typeof name === 'string' && name.trim() !== '' && typeof description === 'string'
-}
+/** Schema for `project.json`. Unknown keys are allowed and dropped. */
+const projectSchema = z.object({
+  name: z.string().refine((name) => name.trim() !== '', 'name must not be empty'),
+  description: z.string(),
+})
 
 /**
  * Groups `import.meta.glob` results by model folder and validates them.
@@ -39,8 +40,9 @@ export function buildModels(
       console.warn(`models/${slug}: missing project.json, skipping`)
       continue
     }
-    if (!isProject(project)) {
-      console.warn(`models/${slug}: invalid project.json, skipping`)
+    const parsed = projectSchema.safeParse(project)
+    if (!parsed.success) {
+      console.warn(`models/${slug}: invalid project.json, skipping`, z.prettifyError(parsed.error))
       continue
     }
     const stlPaths = (stlPathsBySlug.get(slug) ?? []).sort()
@@ -53,8 +55,8 @@ export function buildModels(
     }
     models.push({
       slug,
-      name: project.name,
-      description: project.description,
+      name: parsed.data.name,
+      description: parsed.data.description,
       stlUrl: stls[stlPaths[0]],
     })
   }
