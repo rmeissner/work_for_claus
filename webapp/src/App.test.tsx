@@ -105,6 +105,7 @@ describe('App', () => {
     expect(screen.getAllByRole('option').map((o) => o.textContent)).toEqual([
       'Calibration cube',
       'Pyramid',
+      'Star ornament',
     ])
   })
 })
