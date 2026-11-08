@@ -63,3 +63,4 @@ pytest                             # run the tests of the toolkit and of all mod
 
 - Open a pull request against `main`; the description is pre-filled from `.github/pull_request_template.md`. Keep each PR to one purpose and delete the sections that don't apply.
 - `.github/CODEOWNERS` requests a review from every collaborator (GitHub skips the PR's author). A new collaborator has to be added to that file by hand.
+- The `CI - Models` and `CI - Webapp` checks run on every pull request and must pass before it is merged.
