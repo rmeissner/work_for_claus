@@ -62,10 +62,18 @@ function StlMesh({ url }: StlViewerProps) {
     loaded.computeVertexNormals()
     return loaded
   }, [loaded])
+  // Per-part colors (Magics convention) arrive as a color attribute; a white
+  // base lets the vertex colors through unchanged in light and dark themes.
+  const colored = Boolean((loaded as { hasColors?: boolean }).hasColors)
   return (
     // STL files from slicers and CAD tools are Z-up; three.js is Y-up.
     <mesh geometry={geometry} rotation={[-Math.PI / 2, 0, 0]}>
-      <meshStandardMaterial color="#b0b4ba" roughness={0.6} metalness={0.1} />
+      <meshStandardMaterial
+        color={colored ? '#ffffff' : '#b0b4ba'}
+        vertexColors={colored}
+        roughness={0.6}
+        metalness={0.1}
+      />
     </mesh>
   )
 }
