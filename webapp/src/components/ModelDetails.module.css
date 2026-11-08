@@ -1,0 +1,36 @@
+.details {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.preview {
+  flex: 1;
+  min-height: 240px;
+  display: grid;
+  place-items: center;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  color: var(--muted);
+}
+
+.text {
+  padding: 1rem 1.25rem;
+}
+
+.name {
+  margin: 0 0 0.5rem;
+  font-size: 1.25rem;
+}
+
+.description {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+@media (max-width: 767px) {
+  .preview {
+    flex: none;
+    height: 50vh;
+  }
+}
