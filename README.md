@@ -6,7 +6,7 @@ This repo contains 3D models for our printer Claus
 
 The `webapp/` folder contains a [Vite](https://vite.dev) + React + TypeScript app for browsing the models.
 
-Requirements: Node.js 22 (see `.nvmrc`).
+Requirements: Node.js 26 (see `.nvmrc`).
 
 ```bash
 cd webapp
