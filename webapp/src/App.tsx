@@ -1,6 +1,6 @@
 import { Navigate, Route, Routes, useNavigate, useParams } from 'react-router'
 import { ModelDetails } from './components/ModelDetails'
-import { ModelList } from './components/ModelList'
+import { ModelPicker } from './components/ModelPicker'
 import { ThemeToggle } from './components/ThemeToggle'
 import { loadModels } from './models/loadModels'
 import type { Model } from './models/types'
@@ -21,8 +21,8 @@ function ModelRoute({ models }: { models: Model[] }) {
 
   return (
     <>
-      <nav className="overflow-y-auto border-r border-border [grid-area:sidebar] max-md:max-h-[35vh] max-md:border-r-0 max-md:border-b">
-        <ModelList
+      <nav className="relative border-r border-border [grid-area:sidebar] max-md:border-r-0 max-md:border-b md:overflow-y-auto">
+        <ModelPicker
           models={models}
           selectedSlug={selected.slug}
           onSelect={(next) => navigate(modelPath(next))}
