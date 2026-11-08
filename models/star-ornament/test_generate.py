@@ -8,7 +8,9 @@ from stlkit import assert_printable, load_script, write_stl
 generate = load_script(Path(__file__).with_name("generate.py"))
 
 MIN_WALL = 2.0
-TIP_ZONE = 8.0  # tips taper to a point by nature; walls are only checked outside this radius
+TIP_ZONE = (
+    8.0  # tips taper to a point by nature; walls are only checked outside this radius
+)
 
 
 @pytest.fixture(scope="module", params=["a", "b"])
@@ -43,8 +45,12 @@ def test_slot_width():
     spine = generate.SPINE_WIDTH / 2 - 0.01
     # A is slotted below the meeting point, B above it; the spine is solid on both sides of the slot.
     for y, part in ((-10, generate.part_a_2d()), (30, generate.part_b_2d())):
-        assert strip(part, y, spine) / 0.1 == pytest.approx(2 * spine - generate.SLOT_WIDTH)
-    assert generate.SLOT_WIDTH == pytest.approx(generate.THICKNESS + generate.SLOT_CLEARANCE)
+        assert strip(part, y, spine) / 0.1 == pytest.approx(
+            2 * spine - generate.SLOT_WIDTH
+        )
+    assert generate.SLOT_WIDTH == pytest.approx(
+        generate.THICKNESS + generate.SLOT_CLEARANCE
+    )
 
 
 def test_slot_lengths_add_up_to_the_axis_length():
@@ -68,8 +74,12 @@ def test_parts_slot_together_without_collision():
     # B really stands at right angles to A, both centered on the vertical axis.
     ax = a.bounding_box()
     bx = b.bounding_box()
-    assert ax[1] == pytest.approx(-generate.THICKNESS / 2) and ax[4] == pytest.approx(generate.THICKNESS / 2)
-    assert bx[0] == pytest.approx(-generate.THICKNESS / 2) and bx[3] == pytest.approx(generate.THICKNESS / 2)
+    assert ax[1] == pytest.approx(-generate.THICKNESS / 2) and ax[4] == pytest.approx(
+        generate.THICKNESS / 2
+    )
+    assert bx[0] == pytest.approx(-generate.THICKNESS / 2) and bx[3] == pytest.approx(
+        generate.THICKNESS / 2
+    )
 
 
 def test_parts_have_no_thin_walls(part):
@@ -79,8 +89,11 @@ def test_parts_have_no_thin_walls(part):
     tips = CrossSection.compose(
         [
             CrossSection.circle(TIP_ZONE, 32).translate(
-                (-generate.OUTER_RADIUS * math.sin(math.pi * 2 * i / generate.POINTS),
-                 generate.OUTER_RADIUS * math.cos(math.pi * 2 * i / generate.POINTS))
+                (
+                    -generate.OUTER_RADIUS
+                    * math.sin(math.pi * 2 * i / generate.POINTS),
+                    generate.OUTER_RADIUS * math.cos(math.pi * 2 * i / generate.POINTS),
+                )
             )
             for i in range(generate.POINTS)
         ]

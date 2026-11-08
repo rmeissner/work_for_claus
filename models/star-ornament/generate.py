@@ -10,8 +10,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "tools"))
 
-from manifold3d import CrossSection, JoinType  # noqa: E402
-from stlkit import (  # noqa: E402
+from manifold3d import CrossSection, JoinType
+from stlkit import (
     assert_printable,
     bar,
     extrude,
@@ -62,17 +62,23 @@ def faceted_star() -> CrossSection:
     for i in range(2 * POINTS):
         radius = OUTER_RADIUS if i % 2 == 0 else INNER_RADIUS
         angle = math.pi * i / POINTS
-        supports += bar((0, 0), (-radius * math.sin(angle), radius * math.cos(angle)), RIB_WIDTH)
+        supports += bar(
+            (0, 0), (-radius * math.sin(angle), radius * math.cos(angle)), RIB_WIDTH
+        )
     return shape - (frame_inside - supports)
 
 
 def _slot(y_from: float, y_to: float) -> CrossSection:
-    return CrossSection.square((SLOT_WIDTH, y_to - y_from)).translate((-SLOT_WIDTH / 2, y_from))
+    return CrossSection.square((SLOT_WIDTH, y_to - y_from)).translate(
+        (-SLOT_WIDTH / 2, y_from)
+    )
 
 
 def part_a_2d() -> CrossSection:
     """Slot opens downward (bottom notch up to the meeting point); hanging loop on the top tip."""
-    loop = ring(LOOP_OUTER, LOOP_INNER).translate((0, tip_y() + LOOP_OUTER - LOOP_OVERLAP))
+    loop = ring(LOOP_OUTER, LOOP_INNER).translate(
+        (0, tip_y() + LOOP_OUTER - LOOP_OVERLAP)
+    )
     return (faceted_star() + loop) - _slot(-INNER_RADIUS - 1, SLOT_MEETING)
 
 
@@ -82,7 +88,9 @@ def part_b_2d() -> CrossSection:
     The slot splits the top tip into two prongs; rounding afterwards blunts their
     needle-thin ends (a rounding opening drops anything narrower than twice PRONG_ROUNDING).
     """
-    return round_corners(faceted_star() - _slot(SLOT_MEETING, OUTER_RADIUS + 1), PRONG_ROUNDING)
+    return round_corners(
+        faceted_star() - _slot(SLOT_MEETING, OUTER_RADIUS + 1), PRONG_ROUNDING
+    )
 
 
 def parts():

@@ -1,6 +1,5 @@
 import pytest
 from manifold3d import Manifold
-
 from stlkit import assert_printable
 
 

@@ -37,10 +37,14 @@ def ring(outer: float, inner: float) -> CrossSection:
     """Annulus centered on the origin."""
     if not 0 < inner < outer:
         raise ValueError("inner must be positive and smaller than outer")
-    return CrossSection.circle(outer, CIRCLE_SEGMENTS) - CrossSection.circle(inner, CIRCLE_SEGMENTS)
+    return CrossSection.circle(outer, CIRCLE_SEGMENTS) - CrossSection.circle(
+        inner, CIRCLE_SEGMENTS
+    )
 
 
-def bar(start: tuple[float, float], end: tuple[float, float], width: float) -> CrossSection:
+def bar(
+    start: tuple[float, float], end: tuple[float, float], width: float
+) -> CrossSection:
     """Rectangle of the given width whose centerline runs from ``start`` to ``end``."""
     dx, dy = end[0] - start[0], end[1] - start[1]
     length = math.hypot(dx, dy)

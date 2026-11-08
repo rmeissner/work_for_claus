@@ -6,7 +6,9 @@ import numpy as np
 from manifold3d import Manifold
 
 _HEADER_SIZE = 80
-_TRIANGLE_DTYPE = np.dtype([("normal", "<f4", 3), ("vertices", "<f4", (3, 3)), ("attr", "<u2")])
+_TRIANGLE_DTYPE = np.dtype(
+    [("normal", "<f4", 3), ("vertices", "<f4", (3, 3)), ("attr", "<u2")]
+)
 
 
 def write_stl(manifold: Manifold, path: str | Path, name: str) -> None:
@@ -22,4 +24,6 @@ def write_stl(manifold: Manifold, path: str | Path, name: str) -> None:
     triangles["normal"] = normals
     triangles["vertices"] = corners
     header = name.encode("ascii", "replace")[:_HEADER_SIZE].ljust(_HEADER_SIZE, b"\0")
-    Path(path).write_bytes(header + np.uint32(len(triangles)).tobytes() + triangles.tobytes())
+    Path(path).write_bytes(
+        header + np.uint32(len(triangles)).tobytes() + triangles.tobytes()
+    )
