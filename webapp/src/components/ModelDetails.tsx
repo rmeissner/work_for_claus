@@ -1,4 +1,5 @@
 import type { Model } from '../models/types'
+import { ModelFiles } from './ModelFiles'
 import { StlCarousel } from './StlCarousel'
 
 /** Right pane: the 3D preview, then the model's name and description. */
@@ -12,6 +13,7 @@ export function ModelDetails({ model }: { model: Model }) {
       <div className="px-5 py-4">
         <h2 className="m-0 mb-2 text-title">{model.name}</h2>
         <p className="m-0 whitespace-pre-wrap">{model.description}</p>
+        <ModelFiles files={model.files} />
       </div>
     </article>
   )
