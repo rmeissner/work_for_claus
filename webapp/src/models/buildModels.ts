@@ -50,6 +50,8 @@ export function buildModels(
       console.warn(`models/${slug}: no STL file, skipping`)
       continue
     }
+    // TODO: support several STL files per model (multi-part prints).
+    // https://github.com/rmeissner/work_for_claus/issues/5
     if (stlPaths.length > 1) {
       console.warn(`models/${slug}: several STL files, using ${stlPaths[0]}`)
     }
