@@ -1,7 +1,19 @@
-import { OrbitControls, Stage } from '@react-three/drei'
-import { Canvas, useLoader } from '@react-three/fiber'
-import { Component, Suspense, useMemo, type ReactNode } from 'react'
+import { OrbitControls } from '@react-three/drei'
+import { Canvas, useLoader, useThree } from '@react-three/fiber'
+import {
+  Component,
+  Suspense,
+  useLayoutEffect,
+  useMemo,
+  type ReactNode,
+} from 'react'
 import { STLLoader } from 'three/addons/loaders/STLLoader.js'
+import {
+  DEFAULT_VIEW_DIRECTION,
+  frameBox,
+  placeOnBed,
+  PREVIEW_FOV,
+} from './frameBox'
 
 export interface StlViewerProps {
   url: string
@@ -35,46 +47,63 @@ export function StlViewer({ url }: StlViewerProps) {
 
 /**
  * Loads the STL outside the canvas, so the loading and error states can be
- * plain DOM. useLoader caches by URL, so the mesh inside the canvas reads the
+ * plain DOM. useLoader caches by URL, so the scene inside the canvas reads the
  * same parsed geometry without loading it twice.
  */
 function ModelLoader({ url }: StlViewerProps) {
   useLoader(STLLoader, url)
   return (
-    <Canvas camera={{ position: [60, 40, 80], fov: 45 }}>
-      {/* Stage's own lights decay with distance, which leaves mm-sized
-          models nearly black, and its default environment map is fetched
-          from a CDN. Plain non-decaying lights avoid both. */}
+    <Canvas
+      camera={{
+        position: [...DEFAULT_VIEW_DIRECTION],
+        fov: PREVIEW_FOV,
+      }}
+    >
+      {/* Plain non-decaying lights: drei's Stage lights decay with distance,
+          which leaves mm-sized models nearly black. */}
       <ambientLight intensity={1} />
       <directionalLight position={[1, 2, 3]} intensity={2} />
-      {/* adjustCamera is the fit margin; `true` means 1, which crops. */}
-      <Stage adjustCamera={2} environment={null}>
-        <StlMesh url={url} />
-      </Stage>
-      <OrbitControls makeDefault />
+      <ModelScene url={url} />
     </Canvas>
   )
 }
 
-function StlMesh({ url }: StlViewerProps) {
+/**
+ * The model on the bed origin, with the camera and the orbit target framed on
+ * it, so dragging turns the model around its own center.
+ */
+function ModelScene({ url }: StlViewerProps) {
   const loaded = useLoader(STLLoader, url)
-  const geometry = useMemo(() => {
-    loaded.computeVertexNormals()
-    return loaded
+  const { geometry, box } = useMemo(() => {
+    const placed = placeOnBed(loaded)
+    placed.geometry.computeVertexNormals()
+    return placed
   }, [loaded])
+  const framing = useMemo(() => frameBox(box), [box])
+  const getState = useThree((state) => state.get)
+
+  useLayoutEffect(() => {
+    const { camera } = getState()
+    camera.position.copy(framing.cameraPosition)
+    camera.far = framing.far
+    camera.updateProjectionMatrix()
+  }, [getState, framing])
+
   // Per-part colors (Magics convention) arrive as a color attribute; a white
   // base lets the vertex colors through unchanged in light and dark themes.
   const colored = Boolean((loaded as { hasColors?: boolean }).hasColors)
   return (
-    // STL files from slicers and CAD tools are Z-up; three.js is Y-up.
-    <mesh geometry={geometry} rotation={[-Math.PI / 2, 0, 0]}>
-      <meshStandardMaterial
-        color={colored ? '#ffffff' : '#b0b4ba'}
-        vertexColors={colored}
-        roughness={0.6}
-        metalness={0.1}
-      />
-    </mesh>
+    <>
+      <mesh geometry={geometry}>
+        <meshStandardMaterial
+          color={colored ? '#ffffff' : '#b0b4ba'}
+          vertexColors={colored}
+          roughness={0.6}
+          metalness={0.1}
+        />
+      </mesh>
+      <OrbitControls makeDefault target={framing.target.toArray()} />
+    </>
   )
 }
 
