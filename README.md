@@ -52,8 +52,11 @@ Requirements: Python 3.13.
 pip install -r tools/requirements.txt
 python models/<slug>/generate.py   # regenerate the model's STL (run from the repository root)
 pytest                             # run the tests of the toolkit and of all model scripts
+ruff check                         # lint the Python code (add --fix to apply safe fixes)
+ruff format                        # format the Python code
 ```
 
+- CI runs `ruff check`, `ruff format --check` and `pytest` for every pull request, so run `ruff check` and `ruff format` before committing. The rules are in `ruff.toml`.
 - Model-specific scripts and their tests live in the model's folder (`models/<slug>/generate.py`, `test_generate.py`); helpers that more than one model could use go into `tools/stlkit`.
 - Pytest runs in `importlib` mode so every model can have its own `test_generate.py`. Tests load their generator with `generate = load_script(Path(__file__).with_name("generate.py"))` (`from stlkit import load_script`).
 - Scripts add `tools/` to `sys.path` to import the toolkit, so nothing needs to be installed besides the requirements.
