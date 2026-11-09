@@ -2,12 +2,27 @@
 
 from collections.abc import Sequence
 
+import numpy as np
 from manifold3d import CrossSection, Manifold
 
 
 def extrude(shape: CrossSection, height: float) -> Manifold:
     """Extrude a 2D shape from Z = 0 up to ``height``."""
     return Manifold.extrude(shape, height)
+
+
+def center_of_mass(manifold: Manifold) -> tuple[float, float, float]:
+    """Volume-weighted centroid of ``manifold``, from signed tetrahedra against the origin."""
+    mesh = manifold.to_mesh()
+    verts = mesh.vert_properties[:, :3].astype(float)
+    a, b, c = (verts[mesh.tri_verts[:, i]] for i in range(3))
+    volumes = np.einsum("ij,ij->i", a, np.cross(b, c)) / 6
+    total = volumes.sum()
+    if manifold.is_empty() or abs(total) < 1e-12:
+        raise ValueError("cannot compute the center of mass of an empty manifold")
+    centroids = (a + b + c) / 4
+    x, y, z = (volumes[:, None] * centroids).sum(axis=0) / total
+    return (float(x), float(y), float(z))
 
 
 def layout_on_plate(

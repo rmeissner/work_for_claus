@@ -1,9 +1,12 @@
 """Sanity checks for models before they are exported."""
 
-from manifold3d import Error, Manifold
+from manifold3d import CrossSection, Error, Manifold
+
+from .shapes import round_corners
 
 DEFAULT_MAX_SIZE = (220.0, 220.0, 250.0)
 _TOLERANCE = 1e-6
+_SHARP_CORNER_AREA = 0.01
 
 
 def assert_printable(
@@ -22,3 +25,19 @@ def assert_printable(
     size = (x1 - x0, y1 - y0, z1 - z0)
     if any(s > m + _TOLERANCE for s, m in zip(size, max_size, strict=True)):
         raise ValueError(f"model size {size} exceeds the maximum {max_size}")
+
+
+def assert_rounded(shape: CrossSection, radius: float) -> None:
+    """Raise ``ValueError`` if any convex corner of ``shape`` is sharper than ``radius``.
+
+    Rounding the shape with ``radius`` removes one small piece per sharp corner (about
+    0.21 * radius² for a right angle). Each piece is checked on its own, so one sharp corner
+    on a large outline is not hidden; faceting slivers of the circle arcs are far smaller.
+    """
+    removed = shape - round_corners(shape, radius)
+    for piece in removed.decompose():
+        if piece.area() > _SHARP_CORNER_AREA * radius**2:
+            x, y = piece.bounds()[:2]
+            raise ValueError(
+                f"shape has a convex corner sharper than radius {radius} near ({x:.1f}, {y:.1f})"
+            )
