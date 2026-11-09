@@ -46,7 +46,9 @@ def test_each_part_is_one_connected_piece(k):
 
 def test_two_shapes_two_of_each():
     a, b, c, d = (generate.part_2d(k) for k in PART_IDS)
-    assert same_shape(a.rotate(180), b)
+    # B is A turned upside down, without A's hook.
+    a_without_hook = a - (generate.hook() - b.rotate(180))
+    assert same_shape(a_without_hook.rotate(180), b)
     assert same_shape(c, d)
     assert generate.part(2).volume() == pytest.approx(generate.part(3).volume())
 
@@ -60,10 +62,25 @@ def test_cross_parts_are_slit_from_a_notch_to_the_center():
     assert generate.SLIT_LENGTH == pytest.approx(r)
 
 
-def test_fold_part_slit_is_as_wide_and_twice_as_long_and_closed():
+def test_a_has_a_hook_opposite_its_slit():
+    a = generate.part_2d(0)
+    r = generate.INNER_RADIUS
+    cx, cy = generate.hook_center()
+    assert cx == pytest.approx(0)
+    assert cy > r
+    assert not material_at(a, cx, cy)  # the hole for the thread
+    assert material_at(a, cx, cy + generate.HOOK_HOLE + 1)  # closed above the hole
+    assert material_at(a, 0, r + 0.5)  # the tab fills the notch
+    # The hole sits above the notch, clear of the star's edges, so the thread can't jam.
+    outline = generate.cross_part_outline()
+    assert (outline ^ generate.hook_hole()).area() == pytest.approx(0, abs=1e-9)
+
+
+def test_fold_part_slit_is_as_wide_and_a_bit_longer_than_twice_and_closed():
     c = generate.part_2d(2)
     half = generate.CENTER_SLIT_LENGTH / 2
-    assert generate.CENTER_SLIT_LENGTH == pytest.approx(2 * generate.SLIT_LENGTH)
+    assert generate.SLIT_EXTRA == pytest.approx(0.5)
+    assert half == pytest.approx(generate.SLIT_LENGTH + generate.SLIT_EXTRA)
     for y in (-half + 0.2, 0, half - 0.2):
         assert not material_at(c, 0, y)
     for y in (-half - 0.2, half + 0.2):
