@@ -51,6 +51,13 @@ WING_THICKNESS = 0.6
 TAIL_THICKNESS = 0.5
 FUSELAGE_THICKNESS = 1.6  # eight 0.2 mm layers; stiff enough in test prints
 NOTCH_RADIUS = 1.5  # center marks on the wing's and the tail's edges
+# Control surfaces: a strip along the trailing edge bends along a thin hinge groove, cut from
+# the top. The hinge is exactly one 0.2 mm layer (the first layer, which bonds best), so the
+# slicer can't round it to zero or to two layers.
+HINGE_THICKNESS = 0.2  # material left under the hinge groove
+HINGE_WIDTH = 1.0
+RELIEF_SLIT_WIDTH = 1.0  # chordwise slits at the strip ends, so a strip bends freely
+RELIEF_HOLE_RADIUS = 1.5  # round hole where a slit meets the hinge line
 WING_INCIDENCE = 2.0
 SLIT_CLEARANCE = 0.2
 SLIT_MARGIN = 2.0  # material kept around each slit
@@ -107,6 +114,14 @@ class Design:
     fin_top_chord: float = 15.0
     fin_radius: float = 5.0
     tail_slit_end_gap: float = 4.0  # material behind the tail slit
+    aileron_chord: float = 10.0
+    aileron_inner: float = (
+        40.0  # Y of the slits at the inner and outer end of an aileron
+    )
+    aileron_outer: float = 72.0
+    elevator_chord: float = 8.0  # split at the fuselage: a slit at Y = 0
+    elevator_outer: float = 30.0  # Y of the outer end slit of each elevator half
+    control_surfaces: bool = False  # the variant with bendable ailerons and elevator
     coin: str = "2 cent"  # smallest that passes every check; the coin does not scale
 
     def scaled(self, factor: float, coin: str) -> "Design":
@@ -128,6 +143,11 @@ class Design:
                 "fin_top_chord",
                 "fin_radius",
                 "tail_slit_end_gap",
+                "aileron_chord",
+                "aileron_inner",
+                "aileron_outer",
+                "elevator_chord",
+                "elevator_outer",
             )
         }
         return replace(self, coin=coin, **scale)
@@ -165,6 +185,9 @@ class Design:
 
 FULL = Design()
 MINI = FULL.scaled(0.7, coin="1 cent")
+# Variants with bendable ailerons and elevator, each with its own CG search and checks.
+FULL_CONTROLS = replace(FULL, control_surfaces=True)
+MINI_CONTROLS = replace(MINI, control_surfaces=True)
 
 
 def fin_outline(d: Design) -> CrossSection:
@@ -214,10 +237,56 @@ def wing_outline(d: Design) -> CrossSection:
     return round_corners(plate, d.wing_tip_radius)
 
 
-def _notches(chord: float) -> CrossSection:
-    """Center marks on the leading and trailing edge."""
+def _notches(chord: float, trailing: bool = True) -> CrossSection:
+    """Center marks on the leading and, optionally, the trailing edge."""
     circle = CrossSection.circle(NOTCH_RADIUS, 32)
-    return circle + circle.translate((chord, 0))
+    return circle + circle.translate((chord, 0)) if trailing else circle
+
+
+def _strip_cuts(
+    chord: float,
+    strip_chord: float,
+    slit_ys: list[float],
+    hinge_ys: list[tuple[float, float]],
+) -> tuple[CrossSection, CrossSection]:
+    """Relief slits and hinge grooves of control-surface strips on a trailing edge.
+
+    A slit runs from the trailing edge to the hinge line at each Y in ``slit_ys`` and ends in
+    a round hole; a groove runs along the hinge line over each ``(y0, y1)`` of ``hinge_ys``.
+    """
+    hinge_x = chord - strip_chord
+    slits = CrossSection()
+    for y in slit_ys:
+        hole = CrossSection.circle(RELIEF_HOLE_RADIUS, 32).translate((hinge_x, y))
+        slot = CrossSection.square((strip_chord + 1, RELIEF_SLIT_WIDTH)).translate(
+            (hinge_x, y - RELIEF_SLIT_WIDTH / 2)
+        )
+        slits = slits + hole + slot
+    grooves = CrossSection()
+    for y0, y1 in hinge_ys:
+        grooves = grooves + CrossSection.square((HINGE_WIDTH, y1 - y0)).translate(
+            (hinge_x - HINGE_WIDTH / 2, y0)
+        )
+    return slits, grooves
+
+
+def wing_cuts(d: Design) -> tuple[CrossSection, CrossSection]:
+    """Aileron slits and hinge grooves, on both sides."""
+    a, b = d.aileron_inner, d.aileron_outer
+    return _strip_cuts(
+        d.wing_chord,
+        d.aileron_chord,
+        [-b, -a, a, b],
+        [(-b, -a), (a, b)],
+    )
+
+
+def tail_cuts(d: Design) -> tuple[CrossSection, CrossSection]:
+    """Elevator slits (one at the fuselage, one at each outer end) and hinge groove."""
+    b = d.elevator_outer
+    return _strip_cuts(
+        d.tail_chord, d.elevator_chord, [-b, 0.0, b], [(-b, 0.0), (0.0, b)]
+    )
 
 
 def tail_outline(d: Design) -> CrossSection:
@@ -275,23 +344,39 @@ def fuselage(d: Design, x_wing: float) -> Manifold:
 
 
 def wing_2d(d: Design) -> CrossSection:
-    """Planform with the notches; the notch edges are rounded too."""
+    """Planform with the notches (and aileron slits); the cut edges are rounded too."""
     shape = wing_outline(d) - _notches(d.wing_chord)
+    if d.control_surfaces:
+        shape = shape - wing_cuts(d)[0]
     return round_corners(shape, MIN_CORNER_RADIUS)
+
+
+def _flat(d: Design, shape: CrossSection, thickness: float, grooves) -> Manifold:
+    """Flat solid on Z = 0; the control-surface variant gets hinge grooves from the top."""
+    solid = extrude(shape, thickness)
+    if not d.control_surfaces:
+        return solid
+    depth = thickness - HINGE_THICKNESS
+    return solid - extrude(grooves, depth + 1).translate((0, 0, thickness - depth))
 
 
 def wing(d: Design) -> Manifold:
     """Flat wing on Z = 0."""
-    return extrude(wing_2d(d), WING_THICKNESS)
+    grooves = wing_cuts(d)[1] if d.control_surfaces else None
+    return _flat(d, wing_2d(d), WING_THICKNESS, grooves)
 
 
 def tail_2d(d: Design) -> CrossSection:
-    shape = tail_outline(d) - _notches(d.tail_chord)
+    """Planform with the center notches; the variant's elevator split replaces the rear one."""
+    shape = tail_outline(d) - _notches(d.tail_chord, not d.control_surfaces)
+    if d.control_surfaces:
+        shape = shape - tail_cuts(d)[0]
     return round_corners(shape, MIN_CORNER_RADIUS)
 
 
 def tail(d: Design) -> Manifold:
-    return extrude(tail_2d(d), TAIL_THICKNESS)
+    grooves = tail_cuts(d)[1] if d.control_surfaces else None
+    return _flat(d, tail_2d(d), TAIL_THICKNESS, grooves)
 
 
 def parts(d: Design, x_wing: float) -> list[Manifold]:
@@ -501,13 +586,25 @@ def build_combined(
     ]
 
 
-def outputs(x_wing: float, mini_x_wing: float) -> list[tuple[Manifold, Path, str]]:
-    """Every plain generated file: ``(solid, path, name)``."""
-    files = [(build_plate(FULL, x_wing), DIR / "glider.stl", "glider")]
-    for name, solid in zip(PART_NAMES, parts(FULL, x_wing), strict=True):
-        files.append((build_part(solid), DIR / f"part-{name}.stl", name))
-    files.append((build_plate(MINI, mini_x_wing), DIR / "mini-glider.stl", "mini"))
-    return files
+# Every build: (design, label, assembled file, print plate file, also write the part files).
+BUILDS = (
+    (FULL, "glider", "combined.stl", "glider.stl", True),
+    (MINI, "mini glider", "mini-combined.stl", "mini-glider.stl", False),
+    (
+        FULL_CONTROLS,
+        "glider with controls",
+        "controls-combined.stl",
+        "controls-glider.stl",
+        False,
+    ),
+    (
+        MINI_CONTROLS,
+        "mini glider with controls",
+        "mini-controls-combined.stl",
+        "mini-controls-glider.stl",
+        False,
+    ),
+)
 
 
 def report(label: str, d: Design, x_wing: float, props: dict[str, float]) -> None:
@@ -523,19 +620,22 @@ def report(label: str, d: Design, x_wing: float, props: dict[str, float]) -> Non
 
 
 def main() -> None:
-    x_wing, props = verify(FULL)
-    report("glider", FULL, x_wing, props)
-    mini_x_wing, mini_props = verify(MINI)
-    report("mini", MINI, mini_x_wing, mini_props)
-    for d, x, name, label in (
-        (FULL, x_wing, "combined.stl", "glider assembled"),
-        (MINI, mini_x_wing, "mini-combined.stl", "mini glider assembled"),
-    ):
-        write_colored_stl(build_combined(d, x), DIR / name, label)
-        print(f"wrote {DIR / name}")
-    for solid, path, name in outputs(x_wing, mini_x_wing):
-        write_stl(solid, path, name)
-        print(f"wrote {path}")
+    for d, label, combined, plate, with_parts in BUILDS:
+        x_wing, props = verify(d)
+        report(label, d, x_wing, props)
+        files = [
+            (build_combined(d, x_wing), DIR / combined, f"{label} assembled"),
+            (build_plate(d, x_wing), DIR / plate, label.replace(" glider", "")),
+        ]
+        if with_parts:
+            for name, solid in zip(PART_NAMES, parts(d, x_wing), strict=True):
+                files.append((build_part(solid), DIR / f"part-{name}.stl", name))
+        for content, path, name in files:
+            if isinstance(content, list):
+                write_colored_stl(content, path, name)
+            else:
+                write_stl(content, path, name)
+            print(f"wrote {path}")
 
 
 if __name__ == "__main__":

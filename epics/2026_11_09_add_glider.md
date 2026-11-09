@@ -29,7 +29,7 @@ PRs:
 1. **Plan** (this PR): the epic specification only.
 2. **Toolkit helpers:** `center_of_mass` and `assert_rounded` in `tools/stlkit`, with their tests.
 3. **Glider model:** generator script, `project.json` and the generated STLs. Depends on 2.
-4. **Control surfaces:** bendable ailerons on the wing and an elevator on the tail. Depends on 3.
+4. **Control surfaces:** a separate variant with bendable ailerons on the wing and an elevator on the tail, in full size and 70 %. Depends on 3.
 5. **Cleanup:** remove this specification file. Depends on 4.
 
 The phases run one after another; there is nothing to parallelize.
@@ -157,12 +157,13 @@ It prints the CG, the NP, both tail volumes, the side-area arm, the mass and the
 - `glider.stl`: the print plate;
 - `part-fuselage.stl`, `part-wing.stl`, `part-tail.stl`;
 - `mini-combined.stl` and `mini-glider.stl`: the 70 % mini version (assembled view and print plate), a cheap test print. It gets its own CG search, coin and checks. In the assembled views the coin is a separately colored (copper) disc.
+- Phase 4 adds the control-surface variant (`Design.control_surfaces`, off by default), each with its own CG search and checks: `controls-combined.stl` and `controls-glider.stl` (full size), `mini-controls-combined.stl` and `mini-controls-glider.stl` (70 %). There are no separate part files for it, and the plain files above stay unchanged.
 
 ```json
 {
   "name": "Glider",
-  "version": "1.0",
-  "description": "Kid-safe slot-together glider: a fuselage with a round nose and a fin, a wing and a tail that slide through slits in the fuselage. It flies a bit better than a paper airplane because its center of gravity and wing angles are built in.\nPrint flat without supports in PLA, 0.2 mm layers, 100 % infill (the balance assumes solid parts): about 4.7 m of filament. Press a 2 cent euro coin flat into the round pocket in the nose; it is the nose weight, and the total mass with the coin is about 17 g. The mini plate (70 %, about 2.3 m of filament) is a cheap test print: it takes a 1 cent euro coin, and its total mass with the coin is about 9 g. Fix the coin with a drop of glue or a piece of tape before giving the glider to small children: a loose coin is a choking hazard. Slide the tail through the rear slit and the wing through the front slit until both are centered (notch marks on the wing and the tail).\nLaunch: pinch the body below the wing, about a third back from the wing's leading edge (near the balance point), with the wings level and the nose 5-10° down, and give it a gentle push at jogging speed. If it dives, bend the tail's trailing edge up slightly; if it climbs and stalls, bend it down. Don't throw at people, and throw away broken parts: broken PLA can be sharp.",
+  "version": "1.1",
+  "description": "Kid-safe slot-together glider: a fuselage with a round nose and a fin, a wing and a tail that slide through slits in the fuselage. It flies a bit better than a paper airplane because its center of gravity and wing angles are built in.\nPrint flat without supports in PLA, 0.2 mm layers, 100 % infill (the balance assumes solid parts): about 4.7 m of filament. Press a 2 cent euro coin flat into the round pocket in the nose; it is the nose weight, and the total mass with the coin is about 17 g. The mini plate (70 %, about 2.3 m of filament) is a cheap test print: it takes a 1 cent euro coin, and its total mass with the coin is about 9 g. Fix the coin with a drop of glue or a piece of tape before giving the glider to small children: a loose coin is a choking hazard. Slide the tail through the rear slit and the wing through the front slit until both are centered (notch marks on the wing and the tail).\nLaunch: pinch the body below the wing, about a third back from the wing's leading edge (near the balance point), with the wings level and the nose 5-10° down, and give it a gentle push at jogging speed. If it dives, bend the tail's trailing edge up slightly; if it climbs and stalls, bend it down. Don't throw at people, and throw away broken parts: broken PLA can be sharp.\nVariant with control surfaces (full size and 70 %, assembled view and print plate): the strips along the trailing edges bend along thin hinge lines (about 4.6 m of filament for the full size, 2.3 m for the mini). Bend one aileron (on the wing) up and the other down to roll and turn; both up acts like an elevator. The elevator is the strip along the tail's trailing edge, split in two at the center, which replaces the rear center notch: both halves up make the glider climb or loop, slightly down helps if it stalls. Bend slowly, close to the hinge line. The hinges are one 0.2 mm layer thick and wear out after many bends; reprint the part if one breaks.",
   "files": [
     {
       "file": "combined.stl",
@@ -191,6 +192,22 @@ It prints the CG, the NP, both tail volumes, the side-area arm, the mass and the
     {
       "file": "mini-glider.stl",
       "name": "Mini print plate (70 %)"
+    },
+    {
+      "file": "controls-combined.stl",
+      "name": "Assembled glider with ailerons and elevator"
+    },
+    {
+      "file": "controls-glider.stl",
+      "name": "Print plate with ailerons and elevator"
+    },
+    {
+      "file": "mini-controls-combined.stl",
+      "name": "Mini assembled glider with ailerons and elevator (70 %)"
+    },
+    {
+      "file": "mini-controls-glider.stl",
+      "name": "Mini print plate with ailerons and elevator (70 %)"
     }
   ]
 }
@@ -198,13 +215,13 @@ It prints the CG, the NP, both tail volumes, the side-area arm, the mass and the
 
 ### Control surfaces (phase 4)
 
-Kids trim and steer by bending strips at the trailing edges, like on a paper airplane. Each strip has its own thin hinge groove, so it bends along a straight line and holds its angle. PLA hinges wear out after a number of bends; this is accepted.
+Kids trim and steer by bending strips at the trailing edges, like on a paper airplane. They are offered as a separate variant (`Design.control_surfaces`) next to the plain glider: four extra files (`controls-combined.stl`, `controls-glider.stl`, `mini-controls-combined.stl`, `mini-controls-glider.stl`), while the plain STLs stay unchanged. Each variant runs its own CG search and checks. Each strip has its own thin hinge groove, so it bends along a straight line and holds its angle. PLA hinges wear out after a number of bends; this is accepted.
 
 - **Ailerons:** one strip on each side, on the outer part of the flat wing (but inboard of the rounded tip), about 10 mm deep (`AILERON_CHORD`). Bend one up and the other down to roll and turn. Both up acts like an elevator.
-- **Elevator:** a strip along the tail's trailing edge, about 8 mm deep (`ELEVATOR_CHORD`). It is split into two halves at the fuselage, so each half bends freely next to the tail slit. Both up makes the glider climb or loop; slightly down helps if it stalls.
-- **Hinges:** a groove cut from the top along the hinge line, like star-24's fold lines, leaving `HINGE_THICKNESS` (about 0.3 mm on the 0.6 mm wing, 0.25 mm on the 0.5 mm tail).
+- **Elevator:** a strip along the tail's trailing edge, about 8 mm deep (`ELEVATOR_CHORD`). It is split into two halves at the fuselage, so each half bends freely next to the tail slit. The split is a relief slit at the tail's center that replaces the trailing-edge center notch, so it still marks the center. Both up makes the glider climb or loop; slightly down helps if it stalls.
+- **Hinges:** a groove cut from the top along the hinge line, like star-24's fold lines, leaving `HINGE_THICKNESS` (0.2 mm, exactly one layer at 0.2 mm layer height, on both the 0.6 mm wing and the 0.5 mm tail).
 - **Relief slits:** short chordwise slits (about 1 mm wide) at the ends of each strip, from the trailing edge up to the hinge line, so a strip bends without dragging its neighbours. The slits end in round holes, and the strips' outer corners are rounded, so `assert_rounded` still holds on every final outline.
-- The control surfaces lie flat in `combined.stl`, and the CG, NP and wing position stay as in phase 3 (the strips remove only a few square millimetres of material).
+- The control surfaces lie flat in `controls-combined.stl` and `mini-controls-combined.stl`, and the CG, NP and wing position stay essentially as in the plain glider (the strips remove only a little material).
 - The `project.json` description explains how to bend them.
 
 ### Checks
@@ -254,8 +271,8 @@ About 250 lines of Python plus the generated STLs.
 **Depends on:** 3. **Can run in parallel:** no.
 
 - `models/glider/generate.py`: aileron and elevator hinge grooves and relief slits, as specified in [Control surfaces](#control-surfaces-phase-4).
-- `models/glider/project.json`: how to bend them; version bump.
-- Regenerated STLs.
+- `models/glider/project.json`: how to bend them; version bump; the four variant files.
+- The four variant STLs; the plain STLs are unchanged.
 
 About 80 lines of Python plus the regenerated STLs.
 
@@ -269,9 +286,9 @@ About 80 lines of Python plus the regenerated STLs.
 
 ## Open Questions and Assumptions
 
-- **Material:** PLA as requested. The 0.5-0.6 mm plates and the 0.3 mm hinges are sized for PLA. PETG would be safer in crashes; the parameters are easy to adapt.
+- **Material:** PLA as requested. The 0.5-0.6 mm plates and the 0.2 mm (one layer) hinges are sized for PLA. PETG would be safer in crashes; the parameters are easy to adapt.
 - **Infill:** the CG is computed for solid parts, so the description asks for 100 % infill. The thin plates are solid anyway, but the 2.4 mm boss with less infill would be lighter and move the CG back slightly.
-- **Hinges in PLA:** a 0.3 mm groove survives one bend and holds the angle, as star-24's fold parts do. It won't take repeated bending. Reprint the part if a hinge breaks.
+- **Hinges in PLA:** a one-layer (0.2 mm) hinge survives one bend and holds the angle, as star-24's fold parts do. It won't take repeated bending. Reprint the part if a hinge breaks.
 - **Wing retention:** a friction fit only. If the wing slides sideways in practice, a follow-up can add small detents.
 - **Trim:** phase 3 has no hinged control surfaces. Kids trim by gently bending the tail's trailing edge; phase 4 adds proper ones.
 - **Size:** the 190 mm span is limited by the 220 mm plate. Printing the wing diagonally would allow ~280 mm, but `layout_on_plate` has no rotation, so that is out of scope.

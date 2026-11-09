@@ -1,7 +1,7 @@
 {
   "name": "Glider",
-  "version": "1.0",
-  "description": "Kid-safe slot-together glider: a fuselage with a round nose and a fin, a wing and a tail that slide through slits in the fuselage. It flies a bit better than a paper airplane because its center of gravity and wing angles are built in.\nPrint flat without supports in PLA, 0.2 mm layers, 100 % infill (the balance assumes solid parts): about 4.7 m of filament. Press a 2 cent euro coin flat into the round pocket in the nose; it is the nose weight, and the total mass with the coin is about 17 g. The mini plate (70 %, about 2.3 m of filament) is a cheap test print: it takes a 1 cent euro coin, and its total mass with the coin is about 9 g. Fix the coin with a drop of glue or a piece of tape before giving the glider to small children: a loose coin is a choking hazard. Slide the tail through the rear slit and the wing through the front slit until both are centered (notch marks on the wing and the tail).\nLaunch: pinch the body below the wing, about a third back from the wing's leading edge (near the balance point), with the wings level and the nose 5-10° down, and give it a gentle push at jogging speed. If it dives, bend the tail's trailing edge up slightly; if it climbs and stalls, bend it down. Don't throw at people, and throw away broken parts: broken PLA can be sharp.",
+  "version": "1.1",
+  "description": "Kid-safe slot-together glider: a fuselage with a round nose and a fin, a wing and a tail that slide through slits in the fuselage. It flies a bit better than a paper airplane because its center of gravity and wing angles are built in.\nPrint flat without supports in PLA, 0.2 mm layers, 100 % infill (the balance assumes solid parts): about 4.7 m of filament. Press a 2 cent euro coin flat into the round pocket in the nose; it is the nose weight, and the total mass with the coin is about 17 g. The mini plate (70 %, about 2.3 m of filament) is a cheap test print: it takes a 1 cent euro coin, and its total mass with the coin is about 9 g. Fix the coin with a drop of glue or a piece of tape before giving the glider to small children: a loose coin is a choking hazard. Slide the tail through the rear slit and the wing through the front slit until both are centered (notch marks on the wing and the tail).\nLaunch: pinch the body below the wing, about a third back from the wing's leading edge (near the balance point), with the wings level and the nose 5-10° down, and give it a gentle push at jogging speed. If it dives, bend the tail's trailing edge up slightly; if it climbs and stalls, bend it down. Don't throw at people, and throw away broken parts: broken PLA can be sharp.\nVariant with control surfaces (full size and 70 %, assembled view and print plate): the strips along the trailing edges bend along thin hinge lines (about 4.6 m of filament for the full size, 2.3 m for the mini). Bend one aileron (on the wing) up and the other down to roll and turn; both up acts like an elevator. The elevator is the strip along the tail's trailing edge, split in two at the center, which replaces the rear center notch: both halves up make the glider climb or loop, slightly down helps if it stalls. Bend slowly, close to the hinge line. The hinges are one 0.2 mm layer thick and wear out after many bends; reprint the part if one breaks.",
   "files": [
     { "file": "combined.stl", "name": "Assembled glider" },
     { "file": "glider.stl", "name": "Print plate" },
@@ -9,6 +9,10 @@
     { "file": "part-wing.stl", "name": "Wing" },
     { "file": "part-tail.stl", "name": "Tail" },
     { "file": "mini-combined.stl", "name": "Mini assembled glider (70 %)" },
-    { "file": "mini-glider.stl", "name": "Mini print plate (70 %)" }
+    { "file": "mini-glider.stl", "name": "Mini print plate (70 %)" },
+    { "file": "controls-combined.stl", "name": "Assembled glider with ailerons and elevator" },
+    { "file": "controls-glider.stl", "name": "Print plate with ailerons and elevator" },
+    { "file": "mini-controls-combined.stl", "name": "Mini assembled glider with ailerons and elevator (70 %)" },
+    { "file": "mini-controls-glider.stl", "name": "Mini print plate with ailerons and elevator (70 %)" }
   ]
 }
