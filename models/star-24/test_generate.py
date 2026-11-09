@@ -62,18 +62,20 @@ def test_cross_parts_are_slit_from_a_notch_to_the_center():
     assert generate.SLIT_LENGTH == pytest.approx(r)
 
 
-def test_a_has_a_hook_opposite_its_slit():
+def test_a_has_a_hook_on_the_point_at_right_angles_to_its_slit():
     a = generate.part_2d(0)
-    r = generate.INNER_RADIUS
     cx, cy = generate.hook_center()
-    assert cx == pytest.approx(0)
-    assert cy > r
+    assert cy == pytest.approx(0)  # on the X axis; the slit runs along Y
+    assert cx > generate.tip_x() - generate.HOOK_OVERLAP
     assert not material_at(a, cx, cy)  # the hole for the thread
-    assert material_at(a, cx, cy + generate.HOOK_HOLE + 1)  # closed above the hole
-    assert material_at(a, 0, r + 0.5)  # the tab fills the notch
-    # The hole sits above the notch, clear of the star's edges, so the thread can't jam.
+    ring_middle = (generate.HOOK_OUTER + generate.HOOK_HOLE) / 2
+    assert material_at(a, cx + ring_middle, cy)  # closed beyond the hole
+    assert material_at(a, generate.tip_x() - 0.5, 0)  # attached to the tip
+    # The hole is clear of the star, so the thread can't jam.
     outline = generate.cross_part_outline()
     assert (outline ^ generate.hook_hole()).area() == pytest.approx(0, abs=1e-9)
+    # Only A has a hook.
+    assert not material_at(generate.part_2d(1), cx, cy + ring_middle)
 
 
 def test_fold_part_slit_is_as_wide_and_a_bit_longer_than_twice_and_closed():

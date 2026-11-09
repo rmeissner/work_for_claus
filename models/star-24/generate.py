@@ -3,8 +3,7 @@
 Four six-pointed stars of two shapes, two of each:
 
 - A and B (cross parts): a slit from one notch to the center. They slot together into a cross.
-  A has a hanging hook in the notch opposite its slit, so the star hangs with the slit
-  straight down.
+  A has a hanging hook on the point at right angles to its slit.
 - C and D (fold parts, identical): one closed slit through the center, as wide as the slits
   of A and B and twice as long plus SLIT_EXTRA at each end, and a thinner fold line across
   it. They are folded in half along that line, slipped onto the cross and stay folded.
@@ -32,6 +31,7 @@ from stlkit import (
     bar,
     extrude,
     layout_on_plate,
+    ring,
     round_corners,
     star,
     write_colored_stl,
@@ -49,9 +49,8 @@ FOLD_WIDTH = 1.0
 FOLD_THICKNESS = 0.6  # material left under the fold groove; thinner risks breaking
 HOOK_OUTER = 4.0  # radius of the hook's rounded top
 HOOK_HOLE = 2.0  # radius of the hole for the thread
+HOOK_OVERLAP = 1.5  # how far the hook's ring reaches into the tip
 CIRCLE_SEGMENTS = 64
-# Hole center above A's notch; keeps the hole clear of the notch's edges.
-HOOK_RISE = 4.5
 PLATE_GAP = 5.0
 PLATE_COLUMNS = 2
 
@@ -80,20 +79,19 @@ def _slit(y_from: float, y_to: float) -> CrossSection:
     )
 
 
+def tip_x() -> float:
+    """X of A's rounded tip on the +X axis, at right angles to the slit."""
+    return cross_part_outline().bounds()[2]
+
+
 def hook_center() -> tuple[float, float]:
-    """Center of A's hook hole: on the Y axis above the top notch, opposite the slit."""
-    return (0.0, INNER_RADIUS + HOOK_RISE)
+    """Center of A's hook: beyond the tip on the +X axis, at right angles to the slit."""
+    return (tip_x() + HOOK_OUTER - HOOK_OVERLAP, 0.0)
 
 
 def hook() -> CrossSection:
-    """Tab that fills A's top notch and ends in a half circle above it (hole not cut)."""
-    cx, cy = hook_center()
-    top = CrossSection.circle(HOOK_OUTER, CIRCLE_SEGMENTS).translate((cx, cy))
-    base = INNER_RADIUS - 1  # reaches into the star's material below the notch
-    stem = CrossSection.square((2 * HOOK_OUTER, cy - base)).translate(
-        (cx - HOOK_OUTER, base)
-    )
-    return top + stem
+    """Ring on A's tip at right angles to the slit, for the thread."""
+    return ring(HOOK_OUTER, HOOK_HOLE).translate(hook_center())
 
 
 def hook_hole() -> CrossSection:
