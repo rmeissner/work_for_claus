@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { CogIcon } from './icons/CogIcon'
+import { PLATE_SIZE_MM } from './plate'
 import type { PreviewSettings } from './previewSettings'
 
 export const ROUND_BUTTON =
@@ -42,6 +43,14 @@ export function PreviewSettingsDialog({ settings, onChange }: PreviewSettingsDia
           Preview settings
         </h2>
         <div className="flex flex-col gap-2">
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={settings.showPlate}
+              onChange={(event) => onChange({ showPlate: event.target.checked })}
+            />
+            Show print plate ({PLATE_SIZE_MM} × {PLATE_SIZE_MM} mm)
+          </label>
           <label className="flex items-center gap-2">
             <input
               type="checkbox"

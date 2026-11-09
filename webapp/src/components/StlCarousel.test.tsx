@@ -10,6 +10,7 @@ vi.mock('./StlViewer', () => ({
   StlViewer: ({ url, settings }: { url: string; settings: PreviewSettings }) => (
     <div
       data-testid="stl-viewer"
+      data-show-plate={String(settings.showPlate)}
       data-use-part-colors={String(settings.usePartColors)}
       data-model-color={settings.modelColor}
     >
@@ -107,6 +108,9 @@ describe('StlCarousel', () => {
     const ui = within(dialog)
     const colorInput = ui.getByLabelText('Model color')
     expect(colorInput).toBeDisabled()
+
+    fireEvent.click(ui.getByLabelText('Show print plate (256 × 256 mm)'))
+    expect(await screen.findByTestId('stl-viewer')).toHaveAttribute('data-show-plate', 'true')
 
     fireEvent.click(ui.getByLabelText('Use part colors'))
     expect(colorInput).toBeEnabled()
