@@ -112,7 +112,7 @@ describe('buildModels', () => {
 describe('loadModels', () => {
   it('finds the sample models in the repository', () => {
     const models = loadModels()
-    expect(models.map((m) => m.slug)).toEqual(['star-24', 'calibration-cube', 'glider', 'pyramid', 'star-ornament'])
+    expect(models.map((m) => m.slug)).toEqual(['star-24', 'calibration-cube', 'glider', 'pyramid', 'star-destroyer', 'star-ornament'])
     for (const model of models) {
       expect(model.files.length).toBeGreaterThan(0)
       for (const file of model.files) expect(file.url).toMatch(/\.stl/)
