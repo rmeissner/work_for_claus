@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import type { ReactNode } from 'react'
-import { BufferGeometry } from 'three'
+import { BufferGeometry, PerspectiveCamera } from 'three'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { StlViewer } from './StlViewer'
 
@@ -12,10 +12,11 @@ vi.mock('@react-three/fiber', () => ({
     <div data-testid="canvas">{children}</div>
   ),
   useLoader,
+  useThree: (select: (state: unknown) => unknown) =>
+    select({ get: () => ({ camera: new PerspectiveCamera() }) }),
 }))
 
 vi.mock('@react-three/drei', () => ({
-  Stage: ({ children }: { children: ReactNode }) => <>{children}</>,
   OrbitControls: () => null,
 }))
 
