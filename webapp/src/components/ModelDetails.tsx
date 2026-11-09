@@ -11,7 +11,10 @@ export function ModelDetails({ model }: { model: Model }) {
         <StlCarousel key={model.slug} files={model.files} />
       </div>
       <div className="px-5 py-4">
-        <h2 className="m-0 mb-2 text-title">{model.name}</h2>
+        <h2 className="m-0 mb-2 text-title">
+          {model.name}{' '}
+          <span className="text-sm text-muted">{/^v/i.test(model.version) ? model.version : `v${model.version}`}</span>
+        </h2>
         <p className="m-0 whitespace-pre-wrap">{model.description}</p>
         <ModelFiles files={model.files} />
       </div>

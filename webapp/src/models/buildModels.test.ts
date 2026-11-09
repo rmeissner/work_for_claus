@@ -9,7 +9,7 @@ describe('buildModels', () => {
   afterEach(() => warn.mockClear())
 
   const project = (files: unknown, extra = {}) => ({
-    [`${root}/cube/project.json`]: { name: 'Cube', description: 'A cube.', files, ...extra },
+    [`${root}/cube/project.json`]: { name: 'Cube', version: '1.0', description: 'A cube.', files, ...extra },
   })
 
   it('builds a model per valid folder and ignores unknown keys', () => {
@@ -20,6 +20,7 @@ describe('buildModels', () => {
       {
         slug: 'cube',
         name: 'Cube',
+        version: '1.0',
         description: 'A cube.',
         files: [{ name: 'cube.stl', fileName: 'cube.stl', url: '/assets/cube.stl' }],
       },
@@ -68,18 +69,20 @@ describe('buildModels', () => {
 
   it.each([
     ['null', null],
-    ['a missing name', { description: 'x', files: [{ file: 'cube.stl' }] }],
-    ['an empty name', { name: '  ', description: 'x', files: [{ file: 'cube.stl' }] }],
-    ['a non-string description', { name: 'Cube', description: 3, files: [{ file: 'cube.stl' }] }],
-    ['missing files', { name: 'Cube', description: 'x' }],
-    ['empty files', { name: 'Cube', description: 'x', files: [] }],
-    ['files that is not an array', { name: 'Cube', description: 'x', files: 'cube.stl' }],
-    ['an entry without a file', { name: 'Cube', description: 'x', files: [{ name: 'Cube' }] }],
-    ['a non-.stl entry', { name: 'Cube', description: 'x', files: [{ file: 'cube.3mf' }] }],
-    ['a path with a slash', { name: 'Cube', description: 'x', files: [{ file: 'sub/cube.stl' }] }],
+    ['a missing name', { version: '1.0', description: 'x', files: [{ file: 'cube.stl' }] }],
+    ['a missing version', { name: 'Cube', description: 'x', files: [{ file: 'cube.stl' }] }],
+    ['an empty version', { name: 'Cube', version: ' ', description: 'x', files: [{ file: 'cube.stl' }] }],
+    ['an empty name', { name: '  ', version: '1.0', description: 'x', files: [{ file: 'cube.stl' }] }],
+    ['a non-string description', { name: 'Cube', version: '1.0', description: 3, files: [{ file: 'cube.stl' }] }],
+    ['missing files', { name: 'Cube', version: '1.0', description: 'x' }],
+    ['empty files', { name: 'Cube', version: '1.0', description: 'x', files: [] }],
+    ['files that is not an array', { name: 'Cube', version: '1.0', description: 'x', files: 'cube.stl' }],
+    ['an entry without a file', { name: 'Cube', version: '1.0', description: 'x', files: [{ name: 'Cube' }] }],
+    ['a non-.stl entry', { name: 'Cube', version: '1.0', description: 'x', files: [{ file: 'cube.3mf' }] }],
+    ['a path with a slash', { name: 'Cube', version: '1.0', description: 'x', files: [{ file: 'sub/cube.stl' }] }],
     [
       'a duplicate entry',
-      { name: 'Cube', description: 'x', files: [{ file: 'cube.stl' }, { file: 'cube.stl' }] },
+      { name: 'Cube', version: '1.0', description: 'x', files: [{ file: 'cube.stl' }, { file: 'cube.stl' }] },
     ],
   ])('skips a project.json with %s', (_, invalid) => {
     const models = buildModels(
@@ -96,9 +99,9 @@ describe('buildModels', () => {
   it('sorts models by name', () => {
     const models = buildModels(
       {
-        [`${root}/z/project.json`]: { name: 'apple', description: '', files: [{ file: 'z.stl' }] },
-        [`${root}/a/project.json`]: { name: 'Zebra', description: '', files: [{ file: 'a.stl' }] },
-        [`${root}/m/project.json`]: { name: 'Mango', description: '', files: [{ file: 'm.stl' }] },
+        [`${root}/z/project.json`]: { name: 'apple', version: '1.0', description: '', files: [{ file: 'z.stl' }] },
+        [`${root}/a/project.json`]: { name: 'Zebra', version: '1.0', description: '', files: [{ file: 'a.stl' }] },
+        [`${root}/m/project.json`]: { name: 'Mango', version: '1.0', description: '', files: [{ file: 'm.stl' }] },
       },
       { [`${root}/z/z.stl`]: '/z', [`${root}/a/a.stl`]: '/a', [`${root}/m/m.stl`]: '/m' },
     )

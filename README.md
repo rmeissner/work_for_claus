@@ -29,11 +29,12 @@ models/
     └── cube.stl
 ```
 
-- `project.json` holds a non-empty `name`, a plain-text `description` and a non-empty `files` list; other keys are ignored:
+- `project.json` holds a non-empty `name`, a non-empty `version` (free form, e.g. `"1.0"`, bumped by hand when the model changes; shown next to the name), a plain-text `description` and a non-empty `files` list; other keys are ignored:
 
   ```json
   {
     "name": "Calibration cube",
+    "version": "1.0",
     "description": "20 mm cube to calibrate X/Y/Z steps.",
     "files": [{ "file": "cube.stl" }]
   }

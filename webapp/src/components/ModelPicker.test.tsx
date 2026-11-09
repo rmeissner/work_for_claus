@@ -6,6 +6,7 @@ import { ModelPicker } from './ModelPicker'
 const models: Model[] = ['a', 'b', 'c'].map((slug) => ({
   slug,
   name: `Model ${slug.toUpperCase()}`,
+  version: '1.0',
   description: '',
   files: [{ name: `${slug}.stl`, fileName: `${slug}.stl`, url: `/${slug}.stl` }],
 }))

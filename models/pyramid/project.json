@@ -1,5 +1,6 @@
 {
   "name": "Pyramid",
+  "version": "1.0",
   "description": "Square pyramid with a 30 mm base and 20 mm height.\nGood for checking overhangs and layer adhesion.",
   "files": [
     {

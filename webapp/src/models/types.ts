@@ -10,6 +10,8 @@ export interface Model {
   /** Folder name under `models/`. */
   slug: string
   name: string
+  /** Hand-maintained version from project.json, e.g. "1.0". */
+  version: string
   description: string
   /** In project.json order; never empty. */
   files: ModelFile[]
