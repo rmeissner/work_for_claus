@@ -1,11 +1,15 @@
 {
   "name": "Star Destroyer",
-  "version": "1.3",
-  "description": "Folding Star Destroyer hull with raised buildings and an engine blade. Two lower hooks hold the folded bottom panels shut; one top tab locates in the upper ridge hole. Assembled: 149.7 x 91.1 x 22.3 mm. Hull and blade fit one 148.3 x 202.6 mm print plate. Estimated PLA: 15 g / 5 m. Bridge and shields follow next.\nPrint flat in PLA, 0.4 mm nozzle, 0.2 mm layers, solid parts, no supports. Shell: 0.6 mm; buildings: 1.2 and 1.8 mm total thickness. Five 2 mm-wide fold grooves leave a 0.4 mm skin. Print the 1.2 mm blade with raised engines facing up; recesses are 3.6 mm deep with 2 mm floors.\nAssembly: form the upper roof and side facets, leaving both lower panels open. Keep engines facing aft and the bridge mounting slot uppermost. Raise the blade from below and seat its single top tab in the closed ridge hole. Fold the lower panels shut, guiding each rear-open slit around a lower hook stalk and beneath its wider head. Gently flex or slide the open stern ends into place; do not force the heads through the narrow slits.\nCold folding and retention need a test print on Claus. The preview shows ideal geometry, not material bending. Fold once gently; stop if PLA cracks. Groove and fit parameters are adjustable in generate.py. Do not scale STLs to change fit. combined.stl is for viewing only.",
+  "version": "1.7",
+  "description": "Star Destroyer kit with an 8 mm flat center strip tapering toward the bow. Its dovetail prevents tower lift; the compact engine-blade tab blocks sliding. The bridge sits ahead of that tab. Assembled: 149.7 x 91.1 x 36.5 mm. Main plate: 148.3 x 202.8 mm; accessory plate: 27.4 x 40.0 mm. Estimated PLA: 16.7 g / 5.6 m.\nUse matching version 1.7 hull, engine blade and tower: earlier rail and tab dimensions differ. Upper bridge and shields can be reused unchanged. The unused blade hole is closed.\nPrint the supplied plates in PLA, 0.4 mm nozzle, 0.2 mm layers, solid parts. Hull and rail print flat; the flared rail sides are self-supporting. The tower prints inverted, groove upward; the bridge prints shield holes toward the bed and peg upward. Small blind sockets use short bridges. Shields print upright; a brim may help their stems stick. Print two shields if using the individual file.\nAssembly: form the upper roof, flat strip and sides, leaving the lower panels open. Slide the tower toward the stern along the rail to its stop. Raise the engine blade from below, seating its compact tab through the strip into the tower pocket. Its bearing shoulders support the strip. Guide the lower-panel slits under the blade hooks, then fit the bridge and shields. To remove the tower, first release and lower the blade, then slide the tower toward the bow.\nCold folding and fit need a test print. Fold once gently; stop if PLA cracks. Do not force joints or scale STLs to change fit. combined.stl is for viewing only.",
   "files": [
-    {"file": "combined.stl", "name": "Assembled hull and engine blade (preview only)"},
-    {"file": "star-destroyer.stl", "name": "Print plate (hull and engine blade)"},
-    {"file": "part-hull.stl", "name": "Folding hull with lower hook slits and top tab hole"},
-    {"file": "part-rear.stl", "name": "Engine blade with lower hooks and single top tab"}
+    {"file": "combined.stl", "name": "Assembled Star Destroyer (preview only)"},
+    {"file": "star-destroyer.stl", "name": "Main print plate (hull and engine blade)"},
+    {"file": "accessories.stl", "name": "Accessory plate (holder, bridge, two shields)"},
+    {"file": "part-hull.stl", "name": "Seven-panel hull with flat mounting strip and rail"},
+    {"file": "part-rear.stl", "name": "Engine blade with compact locking tab"},
+    {"file": "part-holder.stl", "name": "Sliding-rail tower (print groove up)"},
+    {"file": "part-bridge.stl", "name": "Bridge (print shield holes down, peg up)"},
+    {"file": "part-shield.stl", "name": "Deflector shield (print two)"}
   ]
 }
