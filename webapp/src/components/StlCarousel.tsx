@@ -1,5 +1,7 @@
 import { lazy, Suspense, useState, type KeyboardEvent } from 'react'
 import type { ModelFile } from '../models/types'
+import { PreviewSettingsDialog, ROUND_BUTTON } from './PreviewSettingsDialog'
+import { usePreviewSettings } from './previewSettings'
 import { visibleDots } from './visibleDots'
 
 // three.js is large, so the viewer is loaded in its own chunk and doesn't
@@ -7,9 +9,6 @@ import { visibleDots } from './visibleDots'
 const StlViewer = lazy(() =>
   import('./StlViewer').then((module) => ({ default: module.StlViewer })),
 )
-
-const ROUND_BUTTON =
-  'grid size-8 cursor-pointer place-items-center rounded-full border border-border bg-bg text-fg hover:bg-hover focus-visible:outline-2 focus-visible:outline-accent'
 
 function Chevron({ direction }: { direction: 'left' | 'right' }) {
   return (
@@ -22,6 +21,7 @@ function Chevron({ direction }: { direction: 'left' | 'right' }) {
 /** One file at a time in the 3D viewer, with dots and prev/next buttons below. */
 export function StlCarousel({ files }: { files: ModelFile[] }) {
   const [index, setIndex] = useState(0)
+  const { settings, updateSettings } = usePreviewSettings()
   const length = files.length
   const current = files[index]
   const previous = () => setIndex((i) => (i - 1 + length) % length)
@@ -51,36 +51,45 @@ export function StlCarousel({ files }: { files: ModelFile[] }) {
       >
         <Suspense fallback={<p className="m-0 grid h-full place-items-center text-muted">Loading viewer…</p>}>
           {/* A key per file resets the viewer's error state on switching. */}
-          <StlViewer key={current.url} url={current.url} />
+          <StlViewer key={current.url} url={current.url} settings={settings} />
         </Suspense>
       </div>
-      {length > 1 && (
-        <div className="flex items-center justify-center gap-3 py-2">
-          <button type="button" aria-label="Previous file" className={ROUND_BUTTON} onClick={previous}>
-            <Chevron direction="left" />
-          </button>
-          <div className="flex items-center gap-2">
-            {visibleDots(index, length).map((dot) => (
-              <button
-                key={dot.index}
-                type="button"
-                aria-label={`Show ${files[dot.index].name}`}
-                title={files[dot.index].name}
-                aria-current={dot.index === index ? 'true' : undefined}
-                onClick={() => setIndex(dot.index)}
-                className="grid size-4 cursor-pointer place-items-center rounded-full focus-visible:outline-2 focus-visible:outline-accent"
-              >
-                <span
-                  className={`rounded-full ${dot.small ? 'size-1.5' : 'size-2.5'} ${dot.index === index ? 'bg-accent' : 'bg-muted opacity-50'}`}
-                />
-              </button>
-            ))}
+      {/* Three columns keep the arrows and dots centered with the cog on the right. */}
+      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 px-2 py-2">
+        <div />
+        {length > 1 ? (
+          <div className="flex items-center gap-3">
+            <button type="button" aria-label="Previous file" className={ROUND_BUTTON} onClick={previous}>
+              <Chevron direction="left" />
+            </button>
+            <div className="flex items-center gap-2">
+              {visibleDots(index, length).map((dot) => (
+                <button
+                  key={dot.index}
+                  type="button"
+                  aria-label={`Show ${files[dot.index].name}`}
+                  title={files[dot.index].name}
+                  aria-current={dot.index === index ? 'true' : undefined}
+                  onClick={() => setIndex(dot.index)}
+                  className="grid size-4 cursor-pointer place-items-center rounded-full focus-visible:outline-2 focus-visible:outline-accent"
+                >
+                  <span
+                    className={`rounded-full ${dot.small ? 'size-1.5' : 'size-2.5'} ${dot.index === index ? 'bg-accent' : 'bg-muted opacity-50'}`}
+                  />
+                </button>
+              ))}
+            </div>
+            <button type="button" aria-label="Next file" className={ROUND_BUTTON} onClick={next}>
+              <Chevron direction="right" />
+            </button>
           </div>
-          <button type="button" aria-label="Next file" className={ROUND_BUTTON} onClick={next}>
-            <Chevron direction="right" />
-          </button>
+        ) : (
+          <div />
+        )}
+        <div className="flex justify-end">
+          <PreviewSettingsDialog settings={settings} onChange={updateSettings} />
         </div>
-      )}
+      </div>
     </section>
   )
 }

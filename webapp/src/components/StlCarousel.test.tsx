@@ -1,12 +1,21 @@
-import { fireEvent, render, screen } from '@testing-library/react'
-import { describe, expect, it, vi } from 'vitest'
+import { fireEvent, render, screen, within } from '@testing-library/react'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { ModelFile } from '../models/types'
+import type { PreviewSettings } from './previewSettings'
 import { StlCarousel } from './StlCarousel'
 import { visibleDots } from './visibleDots'
 
 // jsdom has no WebGL, so the 3D viewer is replaced by a stub showing its URL.
 vi.mock('./StlViewer', () => ({
-  StlViewer: ({ url }: { url: string }) => <div data-testid="stl-viewer">{url}</div>,
+  StlViewer: ({ url, settings }: { url: string; settings: PreviewSettings }) => (
+    <div
+      data-testid="stl-viewer"
+      data-use-part-colors={String(settings.usePartColors)}
+      data-model-color={settings.modelColor}
+    >
+      {url}
+    </div>
+  ),
 }))
 
 const file = (n: string): ModelFile => ({ name: `File ${n}`, fileName: `${n}.stl`, url: `/${n}.stl` })
@@ -15,6 +24,8 @@ const files = ['a', 'b', 'c'].map(file)
 const shown = async () => (await screen.findByTestId('stl-viewer')).textContent
 
 describe('StlCarousel', () => {
+  beforeEach(() => localStorage.clear())
+
   it('shows the first file', async () => {
     render(<StlCarousel files={files} />)
     expect(await shown()).toBe('/a.stl')
@@ -60,10 +71,52 @@ describe('StlCarousel', () => {
     expect(screen.queryByText(/1\s*\/\s*3|1 of 3/)).not.toBeInTheDocument()
   })
 
-  it('has no controls for a single file', async () => {
+  it('shows only the settings button for a single file', async () => {
     render(<StlCarousel files={[file('a')]} />)
     await shown()
-    expect(screen.queryByRole('button')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Preview settings' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Next file' })).not.toBeInTheDocument()
+  })
+
+  it('shows the settings button next to the arrows', async () => {
+    render(<StlCarousel files={files} />)
+    await shown()
+    expect(screen.getByRole('button', { name: 'Preview settings' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Next file' })).toBeInTheDocument()
+  })
+
+  it('closes the dialog on a backdrop click but not on a click inside the content', async () => {
+    render(<StlCarousel files={files} />)
+    await shown()
+    const dialog = screen.getByRole('dialog', { hidden: true })
+    fireEvent.click(screen.getByRole('button', { name: 'Preview settings' }))
+    fireEvent.click(within(dialog).getByTestId('preview-settings-content'))
+    expect(dialog).toHaveAttribute('open')
+    fireEvent.click(dialog)
+    expect(dialog).not.toHaveAttribute('open')
+  })
+
+  it('opens the settings dialog and passes the color settings on to the viewer', async () => {
+    render(<StlCarousel files={files} />)
+    await shown()
+    const dialog = screen.getByRole('dialog', { hidden: true })
+    expect(dialog).not.toHaveAttribute('open')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Preview settings' }))
+    expect(dialog).toHaveAttribute('open')
+    const ui = within(dialog)
+    const colorInput = ui.getByLabelText('Model color')
+    expect(colorInput).toBeDisabled()
+
+    fireEvent.click(ui.getByLabelText('Use part colors'))
+    expect(colorInput).toBeEnabled()
+    fireEvent.change(colorInput, { target: { value: '#ff0000' } })
+    const viewer = await screen.findByTestId('stl-viewer')
+    expect(viewer).toHaveAttribute('data-use-part-colors', 'false')
+    expect(viewer).toHaveAttribute('data-model-color', '#ff0000')
+
+    fireEvent.click(ui.getByRole('button', { name: 'Close' }))
+    expect(dialog).not.toHaveAttribute('open')
   })
 
   it('starts over when remounted with another key', async () => {

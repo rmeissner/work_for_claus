@@ -2,7 +2,10 @@ import { render, screen } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { BufferGeometry, PerspectiveCamera } from 'three'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { DEFAULT_PREVIEW_SETTINGS } from './previewSettings'
 import { StlViewer } from './StlViewer'
+
+const settings = DEFAULT_PREVIEW_SETTINGS
 
 // jsdom has no WebGL, so the canvas and drei helpers render plain DOM.
 const useLoader = vi.hoisted(() => vi.fn())
@@ -31,7 +34,7 @@ describe('StlViewer', () => {
       throw new Promise(() => {})
     })
 
-    render(<StlViewer url="/model.stl" />)
+    render(<StlViewer url="/model.stl" settings={settings} />)
 
     expect(screen.getByRole('status')).toHaveTextContent('Loading model…')
     expect(screen.queryByTestId('canvas')).not.toBeInTheDocument()
@@ -43,26 +46,30 @@ describe('StlViewer', () => {
       throw new Error('Could not load /model.stl')
     })
 
-    render(<StlViewer url="/model.stl" />)
+    render(<StlViewer url="/model.stl" settings={settings} />)
 
     expect(screen.getByRole('alert')).toHaveTextContent('Could not load model')
     expect(screen.queryByTestId('canvas')).not.toBeInTheDocument()
   })
 
   it.each([
-    [true, '#ffffff'],
-    [false, '#b0b4ba'],
-  ])('uses vertex colors when hasColors is %s', (hasColors, color) => {
+    [true, {}, '#ffffff'],
+    [false, {}, '#b0b4ba'],
+    [true, { usePartColors: false, modelColor: '#ff0000' }, '#ff0000'],
+    [false, { usePartColors: false, modelColor: '#ff0000' }, '#ff0000'],
+  ])('with hasColors %s and settings %j the color is %s', (hasColors, override, color) => {
     const geometry = new BufferGeometry() as BufferGeometry & {
       hasColors?: boolean
     }
     geometry.hasColors = hasColors
     useLoader.mockReturnValue(geometry)
 
-    const { container } = render(<StlViewer url="/model.stl" />)
+    const { container } = render(
+      <StlViewer url="/model.stl" settings={{ ...settings, ...override }} />,
+    )
 
     // The mocked canvas renders the material as a plain element; boolean props
-    // are dropped there, so the base color tells the two branches apart.
+    // are dropped there, so the base color tells the cases apart.
     const material = container.querySelector('meshstandardmaterial')
     expect(material).toHaveAttribute('color', color)
   })
