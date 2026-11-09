@@ -51,14 +51,14 @@ Requirements: Python 3.13.
 ```bash
 pip install -r tools/requirements.txt
 python models/<slug>/generate.py   # regenerate the model's STL (run from the repository root)
-pytest                             # run the tests of the toolkit and of all model scripts
+pytest                             # run the toolkit tests and check that the committed STLs are up to date
 ruff check                         # lint the Python code (add --fix to apply safe fixes)
 ruff format                        # format the Python code
 ```
 
 - CI runs `ruff check`, `ruff format --check` and `pytest` for every pull request, so run `ruff check` and `ruff format` before committing. The rules are in `ruff.toml`.
-- Model-specific scripts and their tests live in the model's folder (`models/<slug>/generate.py`, `test_generate.py`); helpers that more than one model could use go into `tools/stlkit`.
-- Pytest runs in `importlib` mode so every model can have its own `test_generate.py`. Tests load their generator with `generate = load_script(Path(__file__).with_name("generate.py"))` (`from stlkit import load_script`).
+- A model folder holds only `generate.py`, `project.json` and the STLs. Model scripts are not unit tested; models are reviewed through the rendered preview. `pytest` checks the toolkit and, for every `models/*/generate.py`, that the committed STLs match what the script writes (`tools/stlkit/tests/test_models.py`).
+- Every `generate.py` must have a `main()` that writes the STLs next to the script (`Path(__file__).with_name(...)`). Helpers that more than one model could use go into `tools/stlkit`.
 - Scripts add `tools/` to `sys.path` to import the toolkit, so nothing needs to be installed besides the requirements.
 - The generated `.stl` is committed, because the webapp shows it.
 
