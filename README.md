@@ -4,7 +4,7 @@ This repo contains 3D models for our printer Claus
 
 ## Webapp
 
-The `webapp/` folder contains a [Vite](https://vite.dev) + React + TypeScript app for browsing the models. The header has a System / Light / Dark theme toggle; the choice is stored in `localStorage` (System follows the OS). The header also shows the app version (`version` in `webapp/package.json`, bump it by hand) and the short hash of the commit the app was built from (`CF_PAGES_COMMIT_SHA` on Cloudflare Pages, `dev` for local builds). The cog button below the 3D preview opens the preview settings (stored in `localStorage`, shared by all models): the part colors of assembled files can be replaced by one model color.
+The `webapp/` folder contains a [Vite](https://vite.dev) + React + TypeScript app for browsing the models. The header has a System / Light / Dark theme toggle; the choice is stored in `localStorage` (System follows the OS). The header also shows the app version (`version` in `webapp/package.json`, bump it by hand) and the short hash of the commit the app was built from (`CF_PAGES_COMMIT_SHA` on Cloudflare Pages, `dev` for local builds). The cog button below the 3D preview opens the preview settings (stored in `localStorage`, shared by all models): the part colors of assembled files can be replaced by one model color, and Claus' 256 × 256 mm build plate can be drawn under the model to judge its size.
 
 Requirements: Node.js 26 (see `.nvmrc`).
 

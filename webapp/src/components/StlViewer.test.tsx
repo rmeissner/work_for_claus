@@ -73,4 +73,18 @@ describe('StlViewer', () => {
     const material = container.querySelector('meshstandardmaterial')
     expect(material).toHaveAttribute('color', color)
   })
+
+  it.each([
+    [false, 0],
+    [true, 1],
+  ])('with showPlate %s renders %i plate meshes and grids', (showPlate, count) => {
+    useLoader.mockReturnValue(new BufferGeometry())
+
+    const { container } = render(
+      <StlViewer url="/model.stl" settings={{ ...settings, showPlate }} />,
+    )
+
+    expect(container.querySelectorAll('[name="print-plate"]')).toHaveLength(count)
+    expect(container.querySelectorAll('linesegments')).toHaveLength(count)
+  })
 })

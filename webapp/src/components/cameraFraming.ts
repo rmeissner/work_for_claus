@@ -19,10 +19,10 @@ export interface Framing {
 }
 
 /**
- * Frames a box: orbit around its center and place the camera along
+ * The camera framing for a box: orbit around its center and place the camera along
  * `direction` far enough that the whole box fits the vertical field of view.
  */
-export function frameBox(
+export function cameraFraming(
   box: Box3,
   fov: number = PREVIEW_FOV,
   direction: readonly [number, number, number] = DEFAULT_VIEW_DIRECTION,

@@ -1,18 +1,18 @@
 import { Box3, BoxGeometry, Vector3 } from 'three'
 import { describe, expect, it } from 'vitest'
-import { frameBox, placeOnBed } from './frameBox'
+import { cameraFraming, placeOnBed } from './cameraFraming'
 
 const box = (min: [number, number, number], max: [number, number, number]) =>
   new Box3(new Vector3(...min), new Vector3(...max))
 
-describe('frameBox', () => {
+describe('cameraFraming', () => {
   it('targets the center of the box', () => {
-    const { target } = frameBox(box([10, 0, -20], [30, 40, 20]))
+    const { target } = cameraFraming(box([10, 0, -20], [30, 40, 20]))
     expect(target.toArray()).toEqual([20, 20, 0])
   })
 
   it('looks at the target from the given direction', () => {
-    const { target, cameraPosition } = frameBox(
+    const { target, cameraPosition } = cameraFraming(
       box([-10, -10, -10], [10, 10, 10]),
       45,
       [0, 0, 1],
@@ -24,15 +24,15 @@ describe('frameBox', () => {
   })
 
   it('moves the camera further away for a bigger box', () => {
-    const small = frameBox(box([-10, 0, -10], [10, 20, 10]))
-    const big = frameBox(box([-110, 0, -110], [110, 20, 110]))
+    const small = cameraFraming(box([-10, 0, -10], [10, 20, 10]))
+    const big = cameraFraming(box([-110, 0, -110], [110, 20, 110]))
     expect(big.cameraPosition.distanceTo(big.target)).toBeGreaterThan(
       small.cameraPosition.distanceTo(small.target),
     )
   })
 
   it('keeps the whole box inside the far plane', () => {
-    const { cameraPosition, far } = frameBox(
+    const { cameraPosition, far } = cameraFraming(
       box([-5000, 0, -5000], [5000, 10, 5000]),
     )
     expect(far).toBeGreaterThan(cameraPosition.length())

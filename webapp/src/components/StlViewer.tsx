@@ -7,13 +7,20 @@ import {
   useMemo,
   type ReactNode,
 } from 'react'
+import { BufferGeometry, Float32BufferAttribute } from 'three'
 import { STLLoader } from 'three/addons/loaders/STLLoader.js'
 import {
   DEFAULT_VIEW_DIRECTION,
-  frameBox,
+  cameraFraming,
   placeOnBed,
   PREVIEW_FOV,
-} from './frameBox'
+} from './cameraFraming'
+import {
+  PLATE_SIZE_MM,
+  PLATE_THICKNESS_MM,
+  plateGridLines,
+  viewBounds,
+} from './plate'
 import { DEFAULT_PREVIEW_SETTINGS, type PreviewSettings } from './previewSettings'
 
 export interface StlViewerProps {
@@ -81,7 +88,11 @@ function ModelScene({ url, settings }: StlViewerProps) {
     placed.geometry.computeVertexNormals()
     return placed
   }, [loaded])
-  const framing = useMemo(() => frameBox(box), [box])
+  const showPlate = settings.showPlate
+  const framing = useMemo(
+    () => cameraFraming(viewBounds(box, showPlate)),
+    [box, showPlate],
+  )
   const getState = useThree((state) => state.get)
 
   useLayoutEffect(() => {
@@ -112,8 +123,41 @@ function ModelScene({ url, settings }: StlViewerProps) {
           metalness={0.1}
         />
       </mesh>
+      {showPlate && (
+        <>
+          <mesh name="print-plate" position={[0, -PLATE_THICKNESS_MM / 2, 0]}>
+            <boxGeometry
+              args={[PLATE_SIZE_MM, PLATE_THICKNESS_MM, PLATE_SIZE_MM]}
+            />
+            {/* Mid grey: visible on both the light and the dark background. */}
+            <meshStandardMaterial color="#8a8f98" roughness={0.9} />
+          </mesh>
+          <PlateGrid />
+        </>
+      )}
       <OrbitControls makeDefault target={framing.target.toArray()} />
     </>
+  )
+}
+
+/** The plate's grid lines along X and Z, just above the plate's top. */
+function PlateGrid() {
+  const geometry = useMemo(() => {
+    const half = PLATE_SIZE_MM / 2
+    const points: number[] = []
+    for (const p of plateGridLines()) {
+      points.push(p, 0, -half, p, 0, half) // along Z
+      points.push(-half, 0, p, half, 0, p) // along X
+    }
+    return new BufferGeometry().setAttribute(
+      'position',
+      new Float32BufferAttribute(points, 3),
+    )
+  }, [])
+  return (
+    <lineSegments geometry={geometry} position={[0, 0.05, 0]}>
+      <lineBasicMaterial color="#5c6068" />
+    </lineSegments>
   )
 }
 
