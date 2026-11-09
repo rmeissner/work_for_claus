@@ -12,7 +12,7 @@ The repository has no PR template, nobody is requested to review automatically, 
 
 1. **PR template and reviewers:** a `.github/pull_request_template.md` that follows the [safenet template](https://github.com/safe-research/safenet/blob/main/.github/pull_request_template.md) without the CLA section, and a `.github/CODEOWNERS` that requests a review from every collaborator.
 2. **Always-running checks:** both workflows lose their path filters and get short names (`CI - Models`, `CI - Webapp`), so a ruleset can require them.
-3. **Hardened workflows:** actions pinned to commit SHAs, least-privilege tokens, no persisted git credentials, and a job that lints the workflows themselves (actionlint and zizmor).
+3. **Hardened workflows:** actions locked with a workflow lockfile, least-privilege tokens, no persisted git credentials, and a job that verifies the lockfile and checks the workflows with zizmor.
 4. **Python lint:** a ruff configuration and a one-time mechanical cleanup of the Python code (imports, formatting).
 5. **Python lint in CI:** ruff runs in CI, so the code stays clean.
 
@@ -23,12 +23,12 @@ Phases 2 and 5 (template, ruff cleanup) don't depend on anything and can run in 
 ## Architecture Decision
 
 - **Reviewers come from CODEOWNERS, not from the template.** A PR template is only text: it can't request reviewers. GitHub requests a review from the code owners of the changed files when a PR is opened (for PRs targeting a branch that has the file). This is a personal repository, so there are no teams; CODEOWNERS lists every collaborator with write access (`@rmeissner @rimeissner-ai @rimeissner-qa`) for `*`. GitHub never asks a PR's author to review it, so the author is skipped. A new collaborator has to be added to the file by hand.
-- **Two workflows, always running.** `models.yml` (`CI - Models`) and `webapp.yml` (`CI - Webapp`) run on every `pull_request` and on `push` to `main`, without `paths` filters. Each has one job, named like its workflow; the job names are the checks the ruleset requires. Phase 4 adds a third workflow, `workflows.yml` (`CI - Workflows`), for actionlint and zizmor. A new or renamed job has to be added to the ruleset by hand (the reviewer prefers this over one workflow with a summary job).
+- **Two workflows, always running.** `models.yml` (`CI - Models`) and `webapp.yml` (`CI - Webapp`) run on every `pull_request` and on `push` to `main`, without `paths` filters. Each has one job, named like its workflow; the job names are the checks the ruleset requires. Phase 4 adds a third workflow, `workflows.yml` (`CI - Workflows`), for the lockfile check and zizmor. A new or renamed job has to be added to the ruleset by hand (the reviewer prefers this over one workflow with a summary job).
 - **Hardening:**
-  - Every `uses:` is pinned to a full commit SHA with the version as a comment (`actions/checkout@<sha> # v5.x.y`), like the `rimeissner-ai/agents` workflows.
+  - Actions are locked in a [workflow lockfile](https://docs.github.com/actions/concepts/security/workflow-dependency-lockfiles) (`.github/workflows/actions.lock`, generated with the `gh actions-lock` extension). Workflows reference exact tags (`actions/checkout@v5.1.0`); the lockfile holds the commits, including transitive ones. `gh actions-lock --verify` fails when the lockfile is stale, and the owner enables the "Require lockfile" Actions policy.
   - `permissions: {}` at the top of the workflow, `contents: read` per job.
   - `actions/checkout` with `persist-credentials: false`.
-  - `actionlint` checks syntax and expressions, `zizmor` checks for security problems (template injection, unpinned actions, excessive permissions). Both run in the `CI - Workflows` job with pinned versions.
+  - `zizmor` (pinned version) checks for security problems (template injection, excessive permissions, …) in the `CI - Workflows` job. actionlint was dropped in review: its extra value is mostly syntax checks, and a broken workflow already fails its own run.
 - **Ruff for Python.** `ruff.toml` at the repository root, target Python 3.13, rules `E, F, W, I, B, UP, RUF` with `E501` ignored (the formatter handles line length). `ruff` is pinned in `tools/requirements.txt` next to pytest. CI runs `ruff check` and `ruff format --check` in the `CI - Models` job, so no second Python setup is needed.
 
 ### Alternatives Considered
@@ -36,7 +36,8 @@ Phases 2 and 5 (template, ruff cleanup) don't depend on anything and can run in 
 - **Keep path filters and skip jobs with a "changes" job (e.g. `dorny/paths-filter`):** saves a minute or two of CI on unrelated PRs, but adds a third-party action and logic that can skip a check by mistake. Both jobs take about a minute, so always running them is simpler.
 - **One `CI` workflow with a `CI result` job that sums up all jobs:** the ruleset would only name one check, but the reviewer finds two workflows cleaner. Rejected in review of phase 3.
 - **Request reviewers with an action or the PR tooling:** needs a token and runs after the PR is opened; CODEOWNERS is built in.
-- **Dependabot for SHA-pinned actions and dependencies:** not part of this epic (see Open Questions).
+- **SHA pins in the workflow files:** replaced by the lockfile in review of phase 4 (also locks transitive actions, and Dependabot updates it).
+- **Dependabot for actions and dependencies:** not part of this epic (see Open Questions).
 - **Run ruff in its own job:** a separate Python setup for a check that takes a second; the `models` job already has Python and the requirements installed.
 
 ---
@@ -127,8 +128,9 @@ Both checks run on the PR itself, although it changes no code.
 
 **Depends on:** 3. **Parallel:** yes, with phase 5.
 
-- `models.yml`, `webapp.yml`: pin every action to a commit SHA with a version comment, `permissions: {}` at the top and `contents: read` per job, `persist-credentials: false` on checkout.
-- Add `workflows.yml` (`CI - Workflows`: actionlint and zizmor, pinned versions, hardened the same way).
+- `models.yml`, `webapp.yml`: exact action tags, `permissions: {}` at the top and `contents: read` per job, `persist-credentials: false` on checkout.
+- Add `.github/workflows/actions.lock` (generated with `gh actions-lock`).
+- Add `workflows.yml` (`CI - Workflows`: `gh actions-lock --verify` and zizmor, pinned versions, hardened the same way).
 - `README.md`: add `CI - Workflows` to the checks that must pass.
 - Fix whatever zizmor reports.
 
@@ -165,6 +167,6 @@ Both checks run on the PR itself, although it changes no code.
 
 - **"Request all contributors":** GitHub can't request "everyone with access" on its own and a personal repository has no teams, so CODEOWNERS lists today's three collaborators. If the repository moves to an organization, a team replaces the list.
 - **Ruleset:** setting it up needs admin rights, so the owner does it on GitHub after phase 3 (see Repository settings). Until then, nothing changes for merging.
-- **Dependabot:** not included. Without it, SHA-pinned actions and ruff only change when someone bumps them by hand. A later PR can add `.github/dependabot.yml` (GitHub Actions, npm, pip).
+- **Dependabot:** not included. Without it, locked actions and ruff only change when someone bumps them by hand. A later PR can add `.github/dependabot.yml` (GitHub Actions, npm, pip).
 - **Conflicts with open PRs:** phase 5 reformats Python files that open phases of other epics change (e.g. the 24-point star epic). Whichever PR merges second has to rebase; for a formatting-only conflict, re-running `ruff format` after the rebase resolves it. If the other epics are close to done, phase 5 can wait for them.
 - **No merge queue:** the workflows don't listen to `merge_group`. If a merge queue is enabled later, add that trigger.

@@ -1,0 +1,43 @@
+name: CI - Workflows
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  GH_ACTIONS_LOCK_VERSION: v0.4.1
+  ZIZMOR_VERSION: 1.32.0
+
+jobs:
+  lint:
+    name: CI - Workflows
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v5.1.0
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@v6.3.0
+        with:
+          python-version: '3.13'
+
+      - name: Verify the actions lockfile
+        run: |
+          gh extension install github/gh-actions-lock --pin "${GH_ACTIONS_LOCK_VERSION}"
+          gh actions-lock --verify
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - run: pip install "zizmor==${ZIZMOR_VERSION}"
+      - run: zizmor --format=github .github/workflows
+        env:
+          GH_TOKEN: ${{ github.token }}
