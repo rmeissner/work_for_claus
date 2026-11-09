@@ -9,6 +9,7 @@ function slugOf(path: string): string | undefined {
 /** Schema for `project.json`. Unknown keys are allowed and dropped. */
 const projectSchema = z.object({
   name: z.string().refine((name) => name.trim() !== '', 'name must not be empty'),
+  version: z.string().refine((version) => version.trim() !== '', 'version must not be empty'),
   description: z.string(),
   files: z
     .array(
@@ -83,6 +84,7 @@ export function buildModels(
     models.push({
       slug,
       name: parsed.data.name,
+      version: parsed.data.version,
       description: parsed.data.description,
       files,
     })

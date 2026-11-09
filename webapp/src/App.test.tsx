@@ -10,8 +10,8 @@ vi.mock('./components/StlViewer', () => ({
 import type { Model } from './models/types'
 
 const models: Model[] = [
-  { slug: 'cube', name: 'Cube', description: 'A cube.', files: [{ name: 'cube.stl', fileName: 'cube.stl', url: '/cube.stl' }] },
-  { slug: 'pyramid', name: 'Pyramid', description: 'A pyramid.\nPointy.', files: [{ name: 'p.stl', fileName: 'p.stl', url: '/p.stl' }] },
+  { slug: 'cube', name: 'Cube', version: '1.0', description: 'A cube.', files: [{ name: 'cube.stl', fileName: 'cube.stl', url: '/cube.stl' }] },
+  { slug: 'pyramid', name: 'Pyramid', version: 'v2', description: 'A pyramid.\nPointy.', files: [{ name: 'p.stl', fileName: 'p.stl', url: '/p.stl' }] },
 ]
 
 const selectedOption = () => screen.getByRole('option', { selected: true })
@@ -47,7 +47,7 @@ describe('App', () => {
     expect(screen.getByRole('heading', { level: 1, name: 'Work for Claus' })).toBeInTheDocument()
     expect(screen.getAllByRole('option').map((o) => o.textContent)).toEqual(['Cube', 'Pyramid'])
     expect(selectedOption()).toHaveTextContent('Cube')
-    expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent('Cube')
+    expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent('Cube v1.0')
     expect(screen.getByTestId('model-preview')).toBeInTheDocument()
     expect(pathname()).toBe('/cube')
   })
@@ -62,7 +62,7 @@ describe('App', () => {
   it('selects a clicked model, shows its description and updates the URL', async () => {
     renderApp(['/'], models)
     fireEvent.click(screen.getByRole('option', { name: 'Pyramid' }))
-    expect(await screen.findByRole('heading', { level: 2, name: 'Pyramid' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { level: 2, name: 'Pyramid v2' })).toBeInTheDocument()
     expect(pathname()).toBe('/pyramid')
     expect(selectedOption()).toHaveTextContent('Pyramid')
     expect(screen.getByText(/A pyramid\.\s+Pointy\./)).toBeInTheDocument()

@@ -1,5 +1,6 @@
 {
   "name": "Calibration cube",
+  "version": "1.0",
   "description": "20 mm cube to calibrate X/Y/Z steps.",
   "files": [
     {
