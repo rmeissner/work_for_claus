@@ -12,15 +12,15 @@ Add a small, kid-safe glider made of flat parts that print without supports and 
 
 Three parts:
 
-- **Fuselage:** a flat side profile with a round nose and the vertical fin. It has two closed slits for the wing and the tail.
-- **Wing:** a flat plate that slides sideways through the fuselage's wing slit. Its tips fold up along thin hinge lines (like star-24's fold parts) to give the glider roll stability.
+- **Fuselage:** a flat side profile with a round nose with a pocket for a coin as nose weight, and a big vertical fin. It has two closed slits for the wing and the tail.
+- **Wing:** a flat plate that slides sideways through the fuselage's wing slit.
 - **Tail:** a flat horizontal stabilizer that slides through the tail slit.
 
 **Is it possible?** Yes. Slot-together foam and balsa chuck gliders work on the same principle. A printed one can fly better than a paper plane for three reasons:
 
 - The generator places the wing so that the center of gravity lands exactly where it should (computed from the meshes, see [Tech Specs](#flight-properties)).
 - The wing and tail angles are fixed by the slits, so every print flies the same.
-- The tail and the folded-up tips make it stable in pitch and roll.
+- The tail and the fin make it stable in pitch and yaw. The side area behind the CG is checked, so the glider turns into the wind instead of spiraling.
 
 The trade-off is weight. PLA plates are much heavier than paper (about 25 g/dm² of wing instead of about 3 g/dm²), so the glider flies faster than a paper plane (about 8 m/s), glides flatter and copes better with wind. That much weight is still harmless for a 25 g toy with rounded edges.
 
@@ -29,7 +29,8 @@ PRs:
 1. **Plan** (this PR): the epic specification only.
 2. **Toolkit helpers:** `center_of_mass` and `assert_rounded` in `tools/stlkit`, with their tests.
 3. **Glider model:** generator script, `project.json` and the generated STLs. Depends on 2.
-4. **Cleanup:** remove this specification file. Depends on 3.
+4. **Control surfaces:** bendable ailerons on the wing and an elevator on the tail. Depends on 3.
+5. **Cleanup:** remove this specification file. Depends on 4.
 
 The phases run one after another; there is nothing to parallelize.
 
@@ -53,17 +54,20 @@ The generator asserts the result, so a parameter change that makes the glider un
 
 ### Kid safety
 
-- Every outline is rounded with at least `MIN_CORNER_RADIUS` on its convex corners. The nose is a half circle of `NOSE_RADIUS`, and the wing and tail tips have large radii. The new `assert_rounded` check enforces this for every part outline.
-- The parts are thin and light, about 25 g in all, and there are no small loose parts.
+- Every outline is rounded with at least `MIN_CORNER_RADIUS` on its convex corners. The nose is a half circle, and the wing and tail tips have large radii. The new `assert_rounded` check enforces this for every part outline.
+- The parts are thin and light, about 17 g in all with the coin. The coin is the one loose part: it is pressed into the pocket, and the description asks to fix it with glue or tape before the glider goes to small children, because a loose coin is a choking hazard. No magnets (swallowing hazard).
 - PLA can snap into sharp pieces in a hard crash. The description says to throw away broken parts. PETG would be safer, but PLA is what Claus prints.
 
 ### Alternatives Considered
 
-- **Flat wing without folds:** simpler, but without dihedral the glider doesn't recover from a bank and spirals in.
+- **Folded wing tips** (dihedral, tried first): flight test 1 flew worse than a flat wing, so the fold grooves are removed.
 - **Two wing halves in a V-joiner** (real dihedral, ~30 cm span): more parts for kids to lose, and the joiner is a weak point. Rejected for v1.
 - **Cambered wing** (an airfoil): it can't be printed flat without supports. A flat plate works well at this size and speed.
 - **Halving-joint wing** (the wing and fuselage slotted into each other, like star-24's cross): the fuselage extends both in front of and behind the wing, so a slit cannot be open to one edge. A closed slit with a friction fit is the standard for chuck gliders.
-- **Extra nose weight** (a thicker nose block or a coin): a thicker nose printed flat would be off-center, and a coin is a small part kids could swallow. Positioning the wing gets the CG right without either.
+- **A separate nose block** (32 × 22 × 5.6 mm, tried second) and **a tapered front body** (7 mm thick at the nose, tried third) were rejected: the block looked odd, and the taper used more filament.
+- **A large flat nose plate** (tried first, 60 × 40 mm): its side area ahead of the CG ruined the yaw stability, see flight test 1.
+- **A coin as nose weight** (decision): the nose mass is a euro coin pressed into an open round pocket, which spends no filament on nose mass. The pocket is open, so the coin is a small loose part; the description tells kids' parents to glue or tape it in. Sealing it in (pause at height) is a possible later option.
+- **Magnets:** rejected, a swallowing hazard.
 
 ---
 
@@ -75,36 +79,41 @@ Defaults (all in `models/glider/generate.py`, millimeters and degrees). These ar
 
 | Parameter | Default | Notes |
 |---|---|---|
-| `WING_SPAN` | 210 | fits Claus' 220 mm plate flat |
-| `WING_CHORD` | 50 | aspect ratio ≈ 4.2 |
+| `WING_SPAN` | 190 | fits Claus' 220 mm plate flat |
+| `WING_CHORD` | 45 | aspect ratio ≈ 4.2 |
 | `WING_TIP_RADIUS` | 15 | rounded planform tips |
-| `WING_THICKNESS` | 0.8 | four 0.2 mm layers |
-| `TIP_FOLD_POSITION` | 65 | distance of each fold line from the center |
-| `TIP_FOLD_ANGLE` | 20 | how far the tips are bent up (preview and neutral point) |
-| `FOLD_WIDTH` / `FOLD_THICKNESS` | 1.0 / 0.4 | hinge groove, as in star-24 |
+| `WING_THICKNESS` | 0.6 | three 0.2 mm layers |
+| `NOTCH_RADIUS` | 1.5 | center marks on the wing and tail edges |
 | `TAIL_SPAN` / `TAIL_CHORD` | 90 / 32 | horizontal stabilizer |
-| `TAIL_THICKNESS` | 0.8 | |
-| `FUSELAGE_LENGTH` | 180 | |
-| `FUSELAGE_THICKNESS` | 3.0 | |
-| `FUSELAGE_HEIGHT` | 14 | at the wing, tapering to ~9 at the tail |
-| `NOSE_RADIUS` | 10 | round nose, also the nose mass |
-| `FIN_HEIGHT` / `FIN_CHORD` | 35 / 40 | on top of the tail end, swept, rounded top |
+| `TAIL_THICKNESS` | 0.5 | |
+| `FUSELAGE_LENGTH` | 190 | |
+| `FUSELAGE_THICKNESS` | 1.6 | eight 0.2 mm layers |
+| `FUSELAGE_HEIGHT` / `TAIL_HEIGHT` | 14 / 7 | body height behind the nose and at the tail |
+| coin (`Design.coin`) | 2 cent / 1 cent | smallest euro coin for which all checks pass: 2 cent (3.06 g, 18.75 mm) for the full glider, 1 cent (2.30 g, 16.25 mm) for the mini; all coins are 1.67 mm thick, see `COINS` |
+| `COIN_CLEARANCE` | 0.15 | pocket diameter minus coin diameter: a snug press fit |
+| `COIN_RIM` | 2 | material around the pocket in the side profile and in the boss |
+| `POCKET_DEPTH` / `POCKET_FLOOR` | 1.77 / 0.6 | coin thickness + 0.1; solid floor under the coin |
+| `BOSS_THICKNESS` | 2.4 | floor + depth rounded up to whole 0.2 mm layers |
+| scale | 1.0 / 0.7 | `Design.scaled(factor, coin)` scales all lengths but not the thicknesses, clearances, notch and corner radii, nor the coin |
+| `FIN_HEIGHT` / `FIN_CHORD` / `FIN_TOP_CHORD` | 42 / 44 / 15 | on top of the tail end, swept, rounded top, no cut-out |
 | `WING_INCIDENCE` | 2 | wing slit angle relative to the tail slit (decalage) |
 | `SLIT_CLEARANCE` | 0.2 | snug friction fit |
 | `MIN_CORNER_RADIUS` | 2 | every convex corner |
 | `STATIC_MARGIN` | 0.10 | CG ahead of the neutral point, as a fraction of the wing chord |
+| `MIN_TAIL_VOLUME` / `MIN_FIN_VOLUME` | 0.4 / 0.04 | horizontal and vertical tail volume |
+| `MIN_SIDE_AREA_ARM` | 0.05 | side-profile centroid behind the CG, as a fraction of the fuselage length |
 | `PLA_DENSITY` | 1.24 g/cm³ | mass estimate only |
 | `PLATE_GAP` | 5 | |
 
 Geometry:
 
-- **Fuselage:** side profile (local X = length, Y = up). It has a half-circle nose, a body that tapers to the tail boom, and the fin on top of the tail end. All convex corners are rounded. There are two closed slits, `thickness + SLIT_CLEARANCE` high:
+- **Fuselage:** side profile (local X = length, Y = up). The nose is a circle of radius `coin diameter / 2 + COIN_CLEARANCE / 2 + COIN_RIM`, blended into the body with concave fillets (r = 4); the body tapers to the tail boom, and the fin sits on top of the tail end. The outline reads as one continuous shape. The body is `FUSELAGE_THICKNESS` thick; a round boss of `BOSS_THICKNESS` under the nose circle carries a blind **coin pocket** opened from the top face (the side away from the bed): diameter coin + `COIN_CLEARANCE`, depth `POCKET_DEPTH`, floor `POCKET_FLOOR`. It prints flat without supports. In the assembled pose the thin body is centered on the plane of symmetry and the boss and coin stick out to one side (CG shifts sideways by about 0.1 mm). All convex corners are rounded. There are two closed slits, `thickness + SLIT_CLEARANCE` high:
   - the **tail slit** at the tail end, horizontal and below the fin, `TAIL_CHORD + SLIT_CLEARANCE` long;
   - the **wing slit**, `WING_CHORD + SLIT_CLEARANCE` long, tilted by `WING_INCIDENCE`. Its X position comes from the CG search.
 
   Each slit keeps at least 2 mm of material above and below it.
-- **Wing:** a rectangle with rounded tips, `WING_THICKNESS` thick. Two fold grooves run across the chord at ±`TIP_FOLD_POSITION`, cut from the top like star-24's fold line, so the tips fold up. A small rounded notch (r = 1.5) in the leading and trailing edge marks the center.
-- **Tail:** a rectangle with rounded corners, `TAIL_THICKNESS` thick, no folds.
+- **Wing:** a flat rectangle with rounded tips, `WING_THICKNESS` thick. A small rounded notch (r = 1.5) in the leading and trailing edge marks the center.
+- **Tail:** a flat rectangle with rounded corners, `TAIL_THICKNESS` thick, with the same center notches.
 - **Plate:** `layout_on_plate([wing, fuselage, tail], PLATE_GAP, columns=1)`, then `assert_printable`.
 
 ### Flight properties
@@ -115,15 +124,19 @@ The neutral point (NP) is computed from simple aerodynamics, enough to place the
 - Downwash at the tail: `dε/dα = 2·a_w / (π·AR_w)`.
 - Tail volume: `V = S_t·l_t / (S_w·c)`, where `l_t` is the distance from the wing's quarter chord to the tail's quarter chord.
 - `x_NP = 0.25·c + V·(a_t / a_w)·(1 − dε/dα)·c`.
-- The folded tips count with their projected span (`cos(TIP_FOLD_ANGLE)`).
+- Vertical tail volume: `V_v = S_fin·l_fin / (S_w·b)`, where `S_fin` is the fin's profile area above the boom, `l_fin` the distance from the CG to the fin's area centroid and `b` the wing span.
+- Mass model: the coin is a point mass at the pocket center (its table mass from `COINS`), and the pocket's PLA is not counted (the mesh has the pocket cut out). The reported mass includes the coin; the filament length excludes it.
+- Yaw (weathercock) stability: the centroid of the fuselage's whole side profile (nose, body and fin) must lie behind the CG.
 
 The generator asserts:
 
 - `STATIC_MARGIN` is reached within ±1 % of the chord;
-- `V ≥ 0.4`, so the tail is big enough;
+- `V ≥ MIN_TAIL_VOLUME` (0.4), so the tail is big enough;
+- `V_v ≥ MIN_FIN_VOLUME` (0.04), so the fin is big enough;
+- the side-profile centroid is at least `MIN_SIDE_AREA_ARM` × fuselage length behind the CG;
 - the mass is under 30 g.
 
-It prints the CG, the NP, the mass and the wing loading when it runs.
+It prints the CG, the NP, both tail volumes, the side-area arm, the mass and the wing loading when it runs.
 
 ### Toolkit additions (`tools/stlkit`)
 
@@ -140,31 +153,66 @@ It prints the CG, the NP, the mass and the wing loading when it runs.
 
 `generate.py` writes:
 
-- `combined.stl`: the assembled glider with the tips folded, colored per part;
+- `combined.stl`: the assembled glider colored per part;
 - `glider.stl`: the print plate;
-- `part-fuselage.stl`, `part-wing.stl`, `part-tail.stl`.
+- `part-fuselage.stl`, `part-wing.stl`, `part-tail.stl`;
+- `mini-combined.stl` and `mini-glider.stl`: the 70 % mini version (assembled view and print plate), a cheap test print. It gets its own CG search, coin and checks. In the assembled views the coin is a separately colored (copper) disc.
 
 ```json
 {
   "name": "Glider",
   "version": "1.0",
-  "description": "Kid-safe slot-together glider: a fuselage with a round nose and fin, a wing and a tail that slide through slits in the fuselage. It flies a bit better than a paper airplane because its center of gravity and wing angles are built in.\nPrint flat without supports in PLA, 0.2 mm layers, 100 % infill (the balance assumes solid parts). Slide the tail through the rear slit and the wing through the front slit until both are centered (wing: notch marks). Then bend the wing tips up along the thin lines, about 20°. Throw gently and level. If it dives, bend both tail trailing edges up slightly; if it climbs and stalls, down. Don't throw at people, and throw away broken parts: broken PLA can be sharp.",
+  "description": "Kid-safe slot-together glider: a fuselage with a round nose and a fin, a wing and a tail that slide through slits in the fuselage. It flies a bit better than a paper airplane because its center of gravity and wing angles are built in.\nPrint flat without supports in PLA, 0.2 mm layers, 100 % infill (the balance assumes solid parts): about 4.7 m of filament. Press a 2 cent euro coin flat into the round pocket in the nose; it is the nose weight, and the total mass with the coin is about 17 g. The mini plate (70 %, about 2.3 m of filament) is a cheap test print: it takes a 1 cent euro coin, and its total mass with the coin is about 9 g. Fix the coin with a drop of glue or a piece of tape before giving the glider to small children: a loose coin is a choking hazard. Slide the tail through the rear slit and the wing through the front slit until both are centered (notch marks on the wing and the tail).\nLaunch: pinch the body below the wing, about a third back from the wing's leading edge (near the balance point), with the wings level and the nose 5-10° down, and give it a gentle push at jogging speed. If it dives, bend the tail's trailing edge up slightly; if it climbs and stalls, bend it down. Don't throw at people, and throw away broken parts: broken PLA can be sharp.",
   "files": [
-    { "file": "combined.stl", "name": "Assembled glider" },
-    { "file": "glider.stl", "name": "Print plate" },
-    { "file": "part-fuselage.stl", "name": "Fuselage" },
-    { "file": "part-wing.stl", "name": "Wing" },
-    { "file": "part-tail.stl", "name": "Tail" }
+    {
+      "file": "combined.stl",
+      "name": "Assembled glider"
+    },
+    {
+      "file": "glider.stl",
+      "name": "Print plate"
+    },
+    {
+      "file": "part-fuselage.stl",
+      "name": "Fuselage"
+    },
+    {
+      "file": "part-wing.stl",
+      "name": "Wing"
+    },
+    {
+      "file": "part-tail.stl",
+      "name": "Tail"
+    },
+    {
+      "file": "mini-combined.stl",
+      "name": "Mini assembled glider (70 %)"
+    },
+    {
+      "file": "mini-glider.stl",
+      "name": "Mini print plate (70 %)"
+    }
   ]
 }
 ```
+
+### Control surfaces (phase 4)
+
+Kids trim and steer by bending strips at the trailing edges, like on a paper airplane. Each strip has its own thin hinge groove, so it bends along a straight line and holds its angle. PLA hinges wear out after a number of bends; this is accepted.
+
+- **Ailerons:** one strip on each side, on the outer part of the flat wing (but inboard of the rounded tip), about 10 mm deep (`AILERON_CHORD`). Bend one up and the other down to roll and turn. Both up acts like an elevator.
+- **Elevator:** a strip along the tail's trailing edge, about 8 mm deep (`ELEVATOR_CHORD`). It is split into two halves at the fuselage, so each half bends freely next to the tail slit. Both up makes the glider climb or loop; slightly down helps if it stalls.
+- **Hinges:** a groove cut from the top along the hinge line, like star-24's fold lines, leaving `HINGE_THICKNESS` (about 0.3 mm on the 0.6 mm wing, 0.25 mm on the 0.5 mm tail).
+- **Relief slits:** short chordwise slits (about 1 mm wide) at the ends of each strip, from the trailing edge up to the hinge line, so a strip bends without dragging its neighbours. The slits end in round holes, and the strips' outer corners are rounded, so `assert_rounded` still holds on every final outline.
+- The control surfaces lie flat in `combined.stl`, and the CG, NP and wing position stay as in phase 3 (the strips remove only a few square millimetres of material).
+- The `project.json` description explains how to bend them.
 
 ### Checks
 
 The README says model scripts are not unit tested. The model is checked by the asserts in `generate.py`, which run on every `pytest` through `tools/stlkit/tests/test_models.py` (committed STLs up to date):
 
 - `assert_printable` on the plate and every part;
-- `assert_rounded(outline, MIN_CORNER_RADIUS)` on every part outline (before slits and grooves are cut);
+- `assert_rounded(outline, MIN_CORNER_RADIUS)` on every part outline (the fuselage before the slits are cut; the wing and tail with their center notches);
 - in the assembled pose, the wing and tail pass through their slits without intersecting the fuselage (intersection volume ≈ 0);
 - the flight asserts above.
 
@@ -196,14 +244,24 @@ About 100 lines, 5 files.
 
 **Depends on:** 2. **Can run in parallel:** no.
 
-- `models/glider/generate.py`, `models/glider/project.json` and the generated STLs (`combined.stl`, `glider.stl`, `part-*.stl`).
+- `models/glider/generate.py`, `models/glider/project.json` and the generated STLs (`combined.stl`, `glider.stl`, `part-*.stl`, `mini-combined.stl`, `mini-glider.stl`).
 - In the PR description: the printed CG, NP, mass and wing loading, and screenshots of the assembled preview and the plate.
 
 About 250 lines of Python plus the generated STLs.
 
-### Phase 4 — Remove the plan
+### Phase 4 — Control surfaces
 
 **Depends on:** 3. **Can run in parallel:** no.
+
+- `models/glider/generate.py`: aileron and elevator hinge grooves and relief slits, as specified in [Control surfaces](#control-surfaces-phase-4).
+- `models/glider/project.json`: how to bend them; version bump.
+- Regenerated STLs.
+
+About 80 lines of Python plus the regenerated STLs.
+
+### Phase 5 — Remove the plan
+
+**Depends on:** 4. **Can run in parallel:** no.
 
 - Delete `epics/2026_11_09_add_glider.md` after checking that every phase is merged.
 
@@ -211,10 +269,14 @@ About 250 lines of Python plus the generated STLs.
 
 ## Open Questions and Assumptions
 
-- **Material:** PLA as requested. The 0.8 mm plates and the 0.4 mm hinges are sized for PLA. PETG would be safer in crashes; the parameters are easy to adapt.
-- **Infill:** the CG is computed for solid parts, so the description asks for 100 % infill. The 0.8 mm plates are solid anyway, but the 3 mm fuselage with less infill would be lighter and move the CG back.
-- **Fold hinges in PLA:** a 0.4 mm groove survives one fold and holds the angle, as star-24's fold parts do. It won't take repeated folding. Reprint the wing if a hinge breaks.
+- **Material:** PLA as requested. The 0.5-0.6 mm plates and the 0.3 mm hinges are sized for PLA. PETG would be safer in crashes; the parameters are easy to adapt.
+- **Infill:** the CG is computed for solid parts, so the description asks for 100 % infill. The thin plates are solid anyway, but the 2.4 mm boss with less infill would be lighter and move the CG back slightly.
+- **Hinges in PLA:** a 0.3 mm groove survives one bend and holds the angle, as star-24's fold parts do. It won't take repeated bending. Reprint the part if a hinge breaks.
 - **Wing retention:** a friction fit only. If the wing slides sideways in practice, a follow-up can add small detents.
-- **Trim:** there are no hinged control surfaces. Kids trim by gently bending the tail's trailing edge. A dedicated trim tab can come after a test flight.
-- **Size:** the 210 mm span is limited by the 220 mm plate. Printing the wing diagonally would allow ~280 mm, but `layout_on_plate` has no rotation, so that is out of scope.
-- **Flight numbers** (~25 g, ~25 g/dm², ~8 m/s) are estimates. The real CG and mass are printed by the generator in phase 3.
+- **Trim:** phase 3 has no hinged control surfaces. Kids trim by gently bending the tail's trailing edge; phase 4 adds proper ones.
+- **Size:** the 190 mm span is limited by the 220 mm plate. Printing the wing diagonally would allow ~280 mm, but `layout_on_plate` has no rotation, so that is out of scope.
+- **Flight numbers** (~17 g, ~20 g/dm², ~8 m/s) are estimates. The real CG and mass are printed by the generator in phase 3.
+- **Flight test 1** (first print: 60 × 40 mm flat nose plate, 25 mm fin, folded wing tips): the glider rolled to one side and spiraled down, in no consistent direction; flat tips flew better than folded ones. Diagnosis: the nose plate's side area (about 2400 mm²) ahead of the CG dwarfed the fin (about 500 mm²), so the glider had almost no yaw stability. Changes: a compact thick nose block (32 × 22 mm, 5.6 mm thick) replaces the plate, the fin is bigger and has no cut-out, the tip folds are gone, and `generate.py` now checks the vertical tail volume and that the side area is behind the CG. The fuselage is 190 mm long so the wing sits far enough back with the smaller nose.
+- **Flight test 2 / feedback:** the separate nose block looked weird and the glider should use less filament. The block is replaced by a front body that is thickest at the nose and tapers linearly to the 1.6 mm body, printed flat with a sloped top. The wing stays at 0.6 mm and the tail at 0.5 mm because 0.4 mm feels too thin. A 70 % mini version is added as a cheap test print; the generator builds and checks it independently. Tail volume (0.4) is the constraint that sets the smallest nose thickness (7.0 mm): a thinner nose needs the wing further forward, which shrinks the tail arm.
+- **Flight test 3 / coin:** the user decided to use a coin as nose weight instead of the 7 mm taper, with no magnets. Both sizes pass every check without any taper: the full glider needs a 2 cent coin (a 1 cent coin leaves the side area only 7.0 mm behind the CG, below the 9.5 mm floor), the mini a 1 cent coin. The coin is an open press fit; the description asks to glue or tape it in for small children.
+- **Sealed coin:** pausing the print at the pocket's height to seal the coin in is a possible later option; the open pocket is accepted for now (at least for the small test version).
