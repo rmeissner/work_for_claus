@@ -3,9 +3,10 @@
 Four six-pointed stars of two shapes, two of each:
 
 - A and B (cross parts): a slit from one notch to the center. They slot together into a cross.
-- C and D (fold parts, identical): one closed slit through the center, twice as long as the
-  slits of A and B and just as wide, and a thinner fold line across it. They are folded in
-  half along that line, slipped onto the cross and stay folded.
+  A has a hanging hook on the point at right angles to its slit.
+- C and D (fold parts, identical): one closed slit through the center, as wide as the slits
+  of A and B and twice as long plus SLIT_EXTRA at each end, and a thinner fold line across
+  it. They are folded in half along that line, slipped onto the cross and stay folded.
 
 ``combined.stl`` shows the assembly for viewing, each part in its own color: A and B form the
 cross (A in the XZ plane, B in the YZ plane); C and D are folded to FOLD_ANGLE about a hinge
@@ -30,6 +31,7 @@ from stlkit import (
     bar,
     extrude,
     layout_on_plate,
+    ring,
     round_corners,
     star,
     write_colored_stl,
@@ -40,17 +42,23 @@ POINTS = 6
 PARTS = 4
 OUTER_RADIUS = 45.0
 INNER_RADIUS = 18.0
-THICKNESS = 1.2
+THICKNESS = 1.0  # five 0.2 mm layers
 TIP_ROUNDING = 1.0
 SLOT_CLEARANCE = 0.3
 FOLD_WIDTH = 1.0
 FOLD_THICKNESS = 0.6  # material left under the fold groove; thinner risks breaking
+HOOK_OUTER = 4.0  # radius of the hook's rounded top
+HOOK_HOLE = 2.0  # radius of the hole for the thread
+HOOK_OVERLAP = 1.5  # how far the hook's ring reaches into the tip
+CIRCLE_SEGMENTS = 64
 PLATE_GAP = 5.0
 PLATE_COLUMNS = 2
 
 SLIT_WIDTH = THICKNESS + SLOT_CLEARANCE
 SLIT_LENGTH = INNER_RADIUS  # cross parts: from a notch to the center
-CENTER_SLIT_LENGTH = 2 * SLIT_LENGTH  # fold parts: centered, closed at both ends
+# Fold parts: extra slit length at each end, so they slide onto the cross more easily.
+SLIT_EXTRA = 0.5
+CENTER_SLIT_LENGTH = 2 * SLIT_LENGTH + 2 * SLIT_EXTRA  # fold parts: centered, closed
 FOLD_DEPTH = THICKNESS - FOLD_THICKNESS
 PART_NAMES = "abcd"
 OUTPUT = Path(__file__).with_name("star-24.stl")
@@ -71,15 +79,41 @@ def _slit(y_from: float, y_to: float) -> CrossSection:
     )
 
 
+def tip_x() -> float:
+    """X of A's rounded tip on the +X axis, at right angles to the slit."""
+    return cross_part_outline().bounds()[2]
+
+
+def hook_center() -> tuple[float, float]:
+    """Center of A's hook: beyond the tip on the +X axis, at right angles to the slit."""
+    return (tip_x() + HOOK_OUTER - HOOK_OVERLAP, 0.0)
+
+
+def hook() -> CrossSection:
+    """Ring on A's tip at right angles to the slit, for the thread."""
+    return ring(HOOK_OUTER, HOOK_HOLE).translate(hook_center())
+
+
+def hook_hole() -> CrossSection:
+    return CrossSection.circle(HOOK_HOLE, CIRCLE_SEGMENTS).translate(hook_center())
+
+
+def cross_part_outline() -> CrossSection:
+    """A's and B's star outline (no slit, no hook), notches on the Y axis."""
+    return round_corners(
+        star(POINTS, OUTER_RADIUS, INNER_RADIUS).rotate(180 / POINTS), TIP_ROUNDING
+    )
+
+
 def part_2d(k: int) -> CrossSection:
     """Part ``k`` flat; local Y is the slit direction."""
     if k < 2:
         # Notches on the Y axis; A is slit from the bottom notch, B from the top one.
-        shape = round_corners(
-            star(POINTS, OUTER_RADIUS, INNER_RADIUS).rotate(180 / POINTS), TIP_ROUNDING
-        )
+        shape = cross_part_outline()
         reach = OUTER_RADIUS + 1
-        return shape - (_slit(-reach, 0) if k == 0 else _slit(0, reach))
+        if k == 1:
+            return shape - _slit(0, reach)
+        return (shape + hook()) - hook_hole() - _slit(-reach, 0)
     # Points on the Y axis; the slit stays well inside them.
     shape = round_corners(star(POINTS, OUTER_RADIUS, INNER_RADIUS), TIP_ROUNDING)
     half = CENTER_SLIT_LENGTH / 2

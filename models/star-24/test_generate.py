@@ -33,6 +33,15 @@ def test_parts_are_printable():
     assert_printable(generate.build_plate())
 
 
+def test_parts_are_five_layers_and_the_fold_keeps_three():
+    layer = 0.2
+    assert generate.THICKNESS == pytest.approx(5 * layer)
+    assert generate.FOLD_THICKNESS == pytest.approx(3 * layer)
+    assert generate.FOLD_WIDTH == pytest.approx(1.0)
+    # The slits follow the thickness, so the thinner parts still fit snugly.
+    assert generate.SLIT_WIDTH == pytest.approx(generate.THICKNESS + 0.3)
+
+
 def test_plate_fits_the_build_volume():
     x0, y0, z0, x1, y1, z1 = generate.build_plate().bounding_box()
     assert (x1 - x0, y1 - y0, z1 - z0) < (220, 220, 250)
@@ -46,7 +55,9 @@ def test_each_part_is_one_connected_piece(k):
 
 def test_two_shapes_two_of_each():
     a, b, c, d = (generate.part_2d(k) for k in PART_IDS)
-    assert same_shape(a.rotate(180), b)
+    # B is A turned upside down, without A's hook.
+    a_without_hook = a - (generate.hook() - b.rotate(180))
+    assert same_shape(a_without_hook.rotate(180), b)
     assert same_shape(c, d)
     assert generate.part(2).volume() == pytest.approx(generate.part(3).volume())
 
@@ -60,10 +71,27 @@ def test_cross_parts_are_slit_from_a_notch_to_the_center():
     assert generate.SLIT_LENGTH == pytest.approx(r)
 
 
-def test_fold_part_slit_is_as_wide_and_twice_as_long_and_closed():
+def test_a_has_a_hook_on_the_point_at_right_angles_to_its_slit():
+    a = generate.part_2d(0)
+    cx, cy = generate.hook_center()
+    assert cy == pytest.approx(0)  # on the X axis; the slit runs along Y
+    assert cx > generate.tip_x() - generate.HOOK_OVERLAP
+    assert not material_at(a, cx, cy)  # the hole for the thread
+    ring_middle = (generate.HOOK_OUTER + generate.HOOK_HOLE) / 2
+    assert material_at(a, cx + ring_middle, cy)  # closed beyond the hole
+    assert material_at(a, generate.tip_x() - 0.5, 0)  # attached to the tip
+    # The hole is clear of the star, so the thread can't jam.
+    outline = generate.cross_part_outline()
+    assert (outline ^ generate.hook_hole()).area() == pytest.approx(0, abs=1e-9)
+    # Only A has a hook.
+    assert not material_at(generate.part_2d(1), cx, cy + ring_middle)
+
+
+def test_fold_part_slit_is_as_wide_and_a_bit_longer_than_twice_and_closed():
     c = generate.part_2d(2)
     half = generate.CENTER_SLIT_LENGTH / 2
-    assert generate.CENTER_SLIT_LENGTH == pytest.approx(2 * generate.SLIT_LENGTH)
+    assert generate.SLIT_EXTRA == pytest.approx(0.5)
+    assert half == pytest.approx(generate.SLIT_LENGTH + generate.SLIT_EXTRA)
     for y in (-half + 0.2, 0, half - 0.2):
         assert not material_at(c, 0, y)
     for y in (-half - 0.2, half + 0.2):

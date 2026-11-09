@@ -1,6 +1,6 @@
 {
   "name": "24-point star",
-  "description": "Star with 24 points from four flat six-pointed stars of two shapes, two of each: A/B with a slit from a notch to the center, and C/D with a closed slit through the center (as wide as A's and twice as long) and a thinner fold line across it.\nPrint flat without supports (PLA, 0.2 mm layers). Slot A and B together into a cross. Fold C to 60° along its thin line and slide it onto the cross so B goes through its slit; it stays folded, its halves and A's making three 60° angles. Repeat with D on the other side of A. Hang it with a thread.",
+  "description": "Star with 24 points from four flat six-pointed stars of two shapes, two of each: A/B with a slit from a notch to the center (A also has a hook on the point at right angles to its slit), and C/D with a closed slit through the center (as wide as A's, twice as long plus 0.5 mm at each end) and a thinner fold line across it.\nPrint flat without supports (PLA, 0.2 mm layers). Slot A and B together into a cross. Fold C to 60° along its thin line and slide it onto the cross so B goes through its slit; it stays folded, its halves and A's making three 60° angles. Repeat with D on the other side of A. Hang it with a thread through A's hook.",
   "files": [
     {
       "file": "combined.stl",
