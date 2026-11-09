@@ -18,6 +18,8 @@ npm run typecheck  # type-check only
 npm test           # run the unit tests (Vitest)
 ```
 
+The app icon is `webapp/public/favicon.svg` (Claus, our printer). The PNG icons (`favicon-32.png`, `apple-touch-icon.png` at 180 px, `icon-192.png`, `icon-512.png`) were rendered from it with a Playwright (Chromium) screenshot of the SVG at each size and a transparent background (`apple-touch-icon.png` with square, opaque corners, because iOS rounds them itself and fills transparency with black); re-render them the same way after changing the SVG.
+
 ## Adding a model
 
 Each model lives in its own folder under `models/`. The folder name is the model's slug (used in links):
