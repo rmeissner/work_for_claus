@@ -1,7 +1,7 @@
-import math
-from itertools import combinations
+import json
 from pathlib import Path
 
+import numpy as np
 import pytest
 from manifold3d import CrossSection
 from stlkit import assert_printable, load_script, write_stl
@@ -11,15 +11,19 @@ generate = load_script(Path(__file__).with_name("generate.py"))
 PART_IDS = list(range(generate.PARTS))
 
 
-@pytest.fixture(scope="module")
-def assembled():
-    return generate.assembled()
+def same_shape(a, b):
+    return (a - b).area() + (b - a).area() == pytest.approx(0, abs=1e-6)
 
 
-def strip(part, y, half_width, height=0.1):
-    """Area of ``part`` inside a thin horizontal strip around the vertical axis."""
-    probe = CrossSection.square((2 * half_width, height)).translate((-half_width, y))
-    return (part ^ probe).area()
+def material_at(shape, x, y, size=0.02):
+    probe = CrossSection.square((size, size)).translate((x - size / 2, y - size / 2))
+    return (shape ^ probe).area() > 0
+
+
+def thickness_at(solid, x, y, size=0.05):
+    probe = CrossSection.square((size, size)).translate((x - size / 2, y - size / 2))
+    column = solid ^ generate.extrude(probe, 10).translate((0, 0, -1))
+    return column.volume() / size**2
 
 
 def test_parts_are_printable():
@@ -36,76 +40,130 @@ def test_plate_fits_the_build_volume():
 
 @pytest.mark.parametrize("k", PART_IDS)
 def test_each_part_is_one_connected_piece(k):
-    part = generate.part_2d(k)
-    assert len(part.decompose()) == 1
-    assert len(generate.extrude(part, generate.THICKNESS).decompose()) == 1
+    assert len(generate.part_2d(k).decompose()) == 1
+    assert len(generate.part(k).decompose()) == 1
 
 
-def test_slot_width():
-    assert generate.SLOT_WIDTH == pytest.approx(
-        generate.THICKNESS / math.tan(math.radians(22.5)) + generate.SLOT_CLEARANCE
+def test_two_shapes_two_of_each():
+    a, b, c, d = (generate.part_2d(k) for k in PART_IDS)
+    assert same_shape(a.rotate(180), b)
+    assert same_shape(c, d)
+    assert generate.part(2).volume() == pytest.approx(generate.part(3).volume())
+
+
+def test_cross_parts_are_slit_from_a_notch_to_the_center():
+    a = generate.part_2d(0)
+    r = generate.INNER_RADIUS
+    assert not material_at(a, 0, -r + 1)
+    assert not material_at(a, 0, -0.5)
+    assert material_at(a, 0, 0.5)
+    assert generate.SLIT_LENGTH == pytest.approx(r)
+
+
+def test_fold_part_slit_is_as_wide_and_twice_as_long_and_closed():
+    c = generate.part_2d(2)
+    half = generate.CENTER_SLIT_LENGTH / 2
+    assert generate.CENTER_SLIT_LENGTH == pytest.approx(2 * generate.SLIT_LENGTH)
+    for y in (-half + 0.2, 0, half - 0.2):
+        assert not material_at(c, 0, y)
+    for y in (-half - 0.2, half + 0.2):
+        assert material_at(c, 0, y)
+    # Same width as the cross parts' slit: solid just beside it, empty just inside.
+    w = generate.SLIT_WIDTH / 2
+    assert not material_at(c, w - 0.05, 5)
+    assert material_at(c, w + 0.05, 5)
+
+
+def test_fold_groove_runs_across_the_slit_and_is_not_too_thin():
+    c = generate.part(2)
+    assert generate.FOLD_THICKNESS >= 0.6
+    for x in (-10, -3, 3, 10):
+        assert thickness_at(c, x, 0) == pytest.approx(generate.FOLD_THICKNESS, abs=1e-3)
+        assert thickness_at(c, x, 2) == pytest.approx(generate.THICKNESS, abs=1e-3)
+    for k in (0, 1):
+        assert thickness_at(generate.part(k), 10, 0) == pytest.approx(
+            generate.THICKNESS, abs=1e-3
+        )
+
+
+def test_project_json_lists_the_files_in_order():
+    project = json.loads(Path(__file__).with_name("project.json").read_text())
+    assert [f["file"] for f in project["files"]] == [
+        "combined.stl",
+        "star-24.stl",
+        "part-a.stl",
+        "part-b.stl",
+        "part-c.stl",
+        "part-d.stl",
+    ]
+    listed = {f["file"] for f in project["files"]}
+    on_disk = {p.name for p in Path(__file__).parent.glob("*.stl")}
+    assert listed == on_disk
+
+
+@pytest.mark.parametrize("index", range(1 + generate.PARTS))
+def test_committed_stl_is_up_to_date(tmp_path, index):
+    solid, path, name = generate.outputs()[index]
+    fresh = tmp_path / path.name
+    write_stl(solid, fresh, name)
+    assert path.read_bytes() == fresh.read_bytes()
+
+
+@pytest.fixture(scope="module")
+def assembled():
+    return generate.assembled()
+
+
+def test_assembled_parts_do_not_intersect(assembled):
+    for i in PART_IDS:
+        for j in PART_IDS[i + 1 :]:
+            overlap = (assembled[i] ^ assembled[j]).volume()
+            assert overlap == pytest.approx(0, abs=1e-6), (i, j)
+
+
+def _half_direction(half):
+    """Direction (Y, Z) of a folded half seen along X, from the hinge to its middle."""
+    _, y0, z0, _, y1, z1 = half.bounding_box()
+    center = np.array([(y0 + y1) / 2, (z0 + z1) / 2])
+    hinge = np.array([np.sign(center[0]) * generate.HINGE_OFFSET, 0.0])
+    v = center - hinge
+    return np.degrees(np.arctan2(v[1], v[0]))
+
+
+@pytest.mark.parametrize(("k", "side"), [(2, 1), (3, -1)])
+def test_fold_parts_make_three_equal_angles_with_a(k, side):
+    upper, lower = generate.folded_halves(k, side)
+    # Seen along X, A's halves point along +Z (90 degrees) and -Z (270 degrees); the folded
+    # halves split one side of A into three 60 degree angles.
+    angles = sorted(_half_direction(h) % 360 for h in (upper, lower))
+    expected = [30, 330] if side > 0 else [150, 210]
+    assert angles == pytest.approx(expected, abs=1)
+
+
+@pytest.mark.parametrize(("k", "side"), [(2, 1), (3, -1)])
+def test_fold_part_slits_lie_in_b_plane(k, side):
+    for half in generate.folded_halves(k, side):
+        x0, _, _, x1, _, _ = half.bounding_box()
+        assert (x0 + x1) / 2 == pytest.approx(0, abs=1e-3)  # centered on B (X = 0)
+    # B (the YZ plane) passes through the slits without touching C or D.
+    b = generate.assembled()[1]
+    for half in generate.folded_halves(k, side):
+        assert (b ^ half).volume() == pytest.approx(0, abs=1e-6)
+
+
+def test_combined_has_one_color_per_part(tmp_path):
+    path = tmp_path / "combined.stl"
+    generate.write_colored_stl(generate.build_combined(), path, "star-24 assembled")
+    data = path.read_bytes()
+    assert b"COLOR=" in data[:80]
+    record = np.dtype([("f", "<f4", 12), ("attr", "<u2")])
+    assert len(set(np.frombuffer(data[84:], dtype=record)["attr"].tolist())) == 4
+    assert min(p.bounding_box()[2] for p, _ in generate.build_combined()) == (
+        pytest.approx(0)
     )
-    assert generate.SLOT_WIDTH == pytest.approx(7.54, abs=0.01)
-    half = generate.SLOT_WIDTH / 2 + 3
-    # Part B is slotted above and below its segment; the rest of the strip stays solid.
-    top, bottom = generate.segment_edges(1)
-    for y in (top + 3, bottom - 3):
-        assert strip(generate.part_2d(1), y, half) / 0.1 == pytest.approx(
-            2 * half - generate.SLOT_WIDTH
-        )
 
 
-def test_every_axis_point_belongs_to_exactly_one_part():
-    step = 0.25
-    parts = [generate.part_2d(k) for k in PART_IDS]
-    y = -generate.INNER_RADIUS  # windows [y, y + step] line up with the segment edges
-    while y < generate.INNER_RADIUS:
-        owners = [k for k, p in enumerate(parts) if strip(p, y, 0.5, step) > 0]
-        expected = min(
-            int((generate.INNER_RADIUS - y - step / 2) // generate.SEGMENT),
-            generate.PARTS - 1,
-        )
-        assert owners == [expected], (y, owners)
-        y += step
-
-
-def test_assembled_star_has_24_distinct_points():
-    directions = []
-    for k in PART_IDS:
-        turn = math.radians(generate.PLANE_ANGLE * k)
-        for i in range(generate.POINTS):
-            # Tip i of the flat part (notch on the axis), standing up and turned about Z.
-            a = math.pi / generate.POINTS + 2 * math.pi * i / generate.POINTS
-            x, y = -math.sin(a), math.cos(a)
-            directions.append((x * math.cos(turn), x * math.sin(turn), y))
-    assert len(directions) == 24
-
-    def angle(u, v):
-        return math.degrees(
-            math.acos(
-                max(-1.0, min(1.0, sum(p * q for p, q in zip(u, v, strict=True))))
-            )
-        )
-
-    assert min(angle(u, v) for u, v in combinations(directions, 2)) > 20
-
-
-def test_parts_slot_together_without_collision(assembled):
-    for part in assembled:
-        assert part.volume() > 0
-    for a, b in combinations(assembled, 2):
-        assert (a ^ b).volume() == pytest.approx(0, abs=1e-6)
-
-
-@pytest.mark.parametrize("k", [1, 2, 3])
-def test_part_slides_in_from_below(assembled, k):
-    for step in range(1, int(2 * generate.OUTER_RADIUS) + 2):
-        moved = assembled[k].translate((0, 0, -float(step)))
-        for other in assembled[:k]:
-            assert (moved ^ other).volume() == pytest.approx(0, abs=1e-6), (k, step)
-
-
-def test_committed_stl_is_up_to_date(tmp_path):
-    fresh = tmp_path / "star-24.stl"
-    write_stl(generate.build_plate(), fresh, "star-24")
-    assert generate.OUTPUT.read_bytes() == fresh.read_bytes()
+def test_committed_combined_stl_is_up_to_date(tmp_path):
+    fresh = tmp_path / "combined.stl"
+    generate.write_colored_stl(generate.build_combined(), fresh, "star-24 assembled")
+    assert generate.COMBINED_OUTPUT.read_bytes() == fresh.read_bytes()
