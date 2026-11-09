@@ -22,7 +22,7 @@ Phases 1–4 don't depend on each other and can run in parallel. Phase 5 (remove
 
 - **One generic "STLs are up to date" test.** `tools/stlkit/tests/test_models.py` is parametrized over `models/*/generate.py`. For each script it copies the model folder into `tmp_path`, loads the copy with `load_script` and calls its `main()`. The scripts write next to `__file__` (`Path(__file__).with_name(...)`), so the fresh STLs land in the copy without changing any script. The test then asserts that every `.stl` in the copy is byte-identical to the committed one. This keeps `load_script` in use; the scripts already put `tools/` on `sys.path` themselves.
 - **Model version is a manual field.** `project.json` gets a required, non-empty `version` string (free form, e.g. `"1.0"`), bumped by hand when a model changes. It is validated by the existing zod schema in `buildModels.ts`; a folder without it is skipped with a warning like other invalid `project.json` files. All existing models start at `"1.0"`.
-- **App version = `package.json` version + git hash, injected at build time.** `vite.config.ts` reads `version` from `package.json` and runs `git rev-parse --short HEAD` (falling back to `dev` when git or the repository is missing), and passes `__APP_VERSION__` and `__APP_COMMIT__` through Vite's `define`. They are declared in `src/vite-env.d.ts` (or a new `src/globals.d.ts`). `package.json` moves from the placeholder `0.0.0` to `0.1.0`; it is bumped by hand.
+- **App version = `package.json` version + git hash, injected at build time.** `vite.config.ts` reads `version` from `package.json` and the commit from `CF_PAGES_COMMIT_SHA` (set by the Cloudflare Pages build that deploys the app and its PR previews), else `git rev-parse HEAD`, else `dev`; the hash is shortened to 7 characters, and passes `__APP_VERSION__` and `__APP_COMMIT__` through Vite's `define`. They are declared in `src/vite-env.d.ts` (or a new `src/globals.d.ts`). `package.json` moves from the placeholder `0.0.0` to `0.1.0`; it is bumped by hand.
 - **Icons are static files in `webapp/public/`.** One hand-written SVG (`favicon.svg`) is the source; the PNGs are rendered from it once with the pre-installed Chromium/Playwright and committed. No new npm dependency. The icon has its own dark background, so it reads on light and dark browser tabs.
 
 ### Alternatives Considered
@@ -94,8 +94,10 @@ Removed: `models/star-24/test_generate.py`, `models/star-ornament/test_generate.
 // vite.config.ts
 const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8'))
 function gitCommit(): string {
+  // Cloudflare Pages sets CF_PAGES_COMMIT_SHA for production and preview builds.
+  if (process.env.CF_PAGES_COMMIT_SHA) return process.env.CF_PAGES_COMMIT_SHA.slice(0, 7)
   try {
-    return execSync('git rev-parse --short HEAD', { stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim()
+    return execSync('git rev-parse --short=7 HEAD', { stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim()
   } catch {
     return 'dev'
   }
@@ -158,6 +160,6 @@ function gitCommit(): string {
 ## Open Questions and Assumptions
 
 - **Version bumps are not enforced.** Nothing checks that a changed model or app bumps its version. A CI check (a changed `models/<slug>/` must change `version`) could follow later if versions get forgotten.
-- The app version uses the commit the build ran on. In CI for a pull request that is GitHub's merge commit, not the branch head; for a build of `main` it is the `main` commit.
+- The app version uses the commit the build ran on: on Cloudflare Pages (production and PR previews) the pushed commit; in GitHub CI for a pull request GitHub's merge commit, which only matters for the CI build, not for anything users see.
 - The GitHub link in the app version assumes the repository stays at `rmeissner/work_for_claus`.
 - The icon is drawn by hand as SVG from the photo; the result is shown in the phase 4 PR for feedback.
