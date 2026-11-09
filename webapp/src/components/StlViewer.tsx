@@ -14,14 +14,16 @@ import {
   placeOnBed,
   PREVIEW_FOV,
 } from './frameBox'
+import { DEFAULT_PREVIEW_SETTINGS, type PreviewSettings } from './previewSettings'
 
 export interface StlViewerProps {
   url: string
+  settings: PreviewSettings
 }
 
 const STATUS_CLASS = 'flex h-full w-full items-center justify-center'
 
-export function StlViewer({ url }: StlViewerProps) {
+export function StlViewer({ url, settings }: StlViewerProps) {
   return (
     <div className="relative h-full w-full">
       <ErrorBoundary
@@ -38,7 +40,7 @@ export function StlViewer({ url }: StlViewerProps) {
             </p>
           }
         >
-          <ModelLoader url={url} />
+          <ModelLoader url={url} settings={settings} />
         </Suspense>
       </ErrorBoundary>
     </div>
@@ -50,7 +52,7 @@ export function StlViewer({ url }: StlViewerProps) {
  * plain DOM. useLoader caches by URL, so the scene inside the canvas reads the
  * same parsed geometry without loading it twice.
  */
-function ModelLoader({ url }: StlViewerProps) {
+function ModelLoader({ url, settings }: StlViewerProps) {
   useLoader(STLLoader, url)
   return (
     <Canvas
@@ -63,7 +65,7 @@ function ModelLoader({ url }: StlViewerProps) {
           which leaves mm-sized models nearly black. */}
       <ambientLight intensity={1} />
       <directionalLight position={[1, 2, 3]} intensity={2} />
-      <ModelScene url={url} />
+      <ModelScene url={url} settings={settings} />
     </Canvas>
   )
 }
@@ -72,7 +74,7 @@ function ModelLoader({ url }: StlViewerProps) {
  * The model on the bed origin, with the camera and the orbit target framed on
  * it, so dragging turns the model around its own center.
  */
-function ModelScene({ url }: StlViewerProps) {
+function ModelScene({ url, settings }: StlViewerProps) {
   const loaded = useLoader(STLLoader, url)
   const { geometry, box } = useMemo(() => {
     const placed = placeOnBed(loaded)
@@ -91,12 +93,20 @@ function ModelScene({ url }: StlViewerProps) {
 
   // Per-part colors (Magics convention) arrive as a color attribute; a white
   // base lets the vertex colors through unchanged in light and dark themes.
-  const colored = Boolean((loaded as { hasColors?: boolean }).hasColors)
+  const colored = Boolean((loaded as { hasColors?: boolean }).hasColors) && settings.usePartColors
+  const color = settings.usePartColors
+    ? colored
+      ? '#ffffff'
+      : DEFAULT_PREVIEW_SETTINGS.modelColor
+    : settings.modelColor
   return (
     <>
       <mesh geometry={geometry}>
+        {/* three.js compiles the shader per material, so changing vertexColors on
+            an existing material has no effect; the key remounts it instead. */}
         <meshStandardMaterial
-          color={colored ? '#ffffff' : '#b0b4ba'}
+          key={colored ? 'vertex-colors' : 'single-color'}
+          color={color}
           vertexColors={colored}
           roughness={0.6}
           metalness={0.1}
