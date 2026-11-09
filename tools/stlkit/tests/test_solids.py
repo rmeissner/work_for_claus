@@ -1,6 +1,6 @@
 import pytest
 from manifold3d import Manifold
-from stlkit import bar, extrude, layout_on_plate, star
+from stlkit import bar, center_of_mass, extrude, layout_on_plate, star
 
 
 def test_extrude_volume_is_area_times_height() -> None:
@@ -54,3 +54,21 @@ def test_layout_on_plate_columns_none_is_one_row() -> None:
     assert default.bounding_box() == explicit.bounding_box()
     assert default.volume() == pytest.approx(explicit.volume())
     assert default.bounding_box()[4] - default.bounding_box()[1] == pytest.approx(20)
+
+
+def test_center_of_mass_of_translated_cube_is_its_center() -> None:
+    cube = Manifold.cube((2, 4, 6)).translate((10, -3, 5))
+    assert center_of_mass(cube) == pytest.approx((11, -1, 8))
+
+
+def test_center_of_mass_of_l_shape_matches_analytic_value() -> None:
+    # 3x1x1 bar (volume 3, center x=1.5, y=.5) plus 1x1x1 cube on top at x 0..1 (center .5, 1.5).
+    l_shape = Manifold.cube((3, 1, 1)) + Manifold.cube((1, 1, 1)).translate((0, 1, 0))
+    assert center_of_mass(l_shape) == pytest.approx(
+        ((3 * 1.5 + 0.5) / 4, (3 * 0.5 + 1.5) / 4, 0.5)
+    )
+
+
+def test_center_of_mass_of_empty_manifold_raises() -> None:
+    with pytest.raises(ValueError, match="empty"):
+        center_of_mass(Manifold())
