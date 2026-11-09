@@ -10,8 +10,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "tools"))
 
-from manifold3d import CrossSection  # noqa: E402
-from stlkit import (  # noqa: E402
+from manifold3d import CrossSection
+from stlkit import (
     assert_printable,
     extrude,
     layout_on_plate,
@@ -43,7 +43,9 @@ OUTPUT = Path(__file__).with_name("star-24.stl")
 
 def outline() -> CrossSection:
     """Star with a notch (not a point) at +Y and at -Y."""
-    return round_corners(star(POINTS, OUTER_RADIUS, INNER_RADIUS).rotate(180.0 / POINTS), TIP_ROUNDING)
+    return round_corners(
+        star(POINTS, OUTER_RADIUS, INNER_RADIUS).rotate(180.0 / POINTS), TIP_ROUNDING
+    )
 
 
 def tip_y() -> float:
@@ -57,7 +59,9 @@ def segment_edges(k: int) -> tuple[float, float]:
 
 
 def _slot(y_from: float, y_to: float) -> CrossSection:
-    return CrossSection.square((SLOT_WIDTH, y_to - y_from)).translate((-SLOT_WIDTH / 2, y_from))
+    return CrossSection.square((SLOT_WIDTH, y_to - y_from)).translate(
+        (-SLOT_WIDTH / 2, y_from)
+    )
 
 
 def part_2d(k: int) -> CrossSection:
@@ -70,7 +74,9 @@ def part_2d(k: int) -> CrossSection:
     if k < PARTS - 1:
         shape -= _slot(-margin, bottom)
     if k == 0:
-        shape += ring(LOOP_OUTER, LOOP_INNER).translate((0, INNER_RADIUS + LOOP_OUTER - LOOP_OVERLAP))
+        shape += ring(LOOP_OUTER, LOOP_INNER).translate(
+            (0, INNER_RADIUS + LOOP_OUTER - LOOP_OVERLAP)
+        )
     return shape
 
 
@@ -82,7 +88,9 @@ def parts():
 def assembled():
     """All parts standing up, slotted together: part k in a vertical plane turned by k * 45 degrees."""
     return [
-        p.translate((0, 0, -THICKNESS / 2)).rotate((90, 0, 0)).rotate((0, 0, PLANE_ANGLE * k))
+        p.translate((0, 0, -THICKNESS / 2))
+        .rotate((90, 0, 0))
+        .rotate((0, 0, PLANE_ANGLE * k))
         for k, p in enumerate(parts())
     ]
 

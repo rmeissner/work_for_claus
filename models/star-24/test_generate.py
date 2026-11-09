@@ -50,7 +50,9 @@ def test_slot_width():
     # Part B is slotted above and below its segment; the rest of the strip stays solid.
     top, bottom = generate.segment_edges(1)
     for y in (top + 3, bottom - 3):
-        assert strip(generate.part_2d(1), y, half) / 0.1 == pytest.approx(2 * half - generate.SLOT_WIDTH)
+        assert strip(generate.part_2d(1), y, half) / 0.1 == pytest.approx(
+            2 * half - generate.SLOT_WIDTH
+        )
 
 
 def test_every_axis_point_belongs_to_exactly_one_part():
@@ -59,7 +61,10 @@ def test_every_axis_point_belongs_to_exactly_one_part():
     y = -generate.INNER_RADIUS  # windows [y, y + step] line up with the segment edges
     while y < generate.INNER_RADIUS:
         owners = [k for k, p in enumerate(parts) if strip(p, y, 0.5, step) > 0]
-        expected = min(int((generate.INNER_RADIUS - y - step / 2) // generate.SEGMENT), generate.PARTS - 1)
+        expected = min(
+            int((generate.INNER_RADIUS - y - step / 2) // generate.SEGMENT),
+            generate.PARTS - 1,
+        )
         assert owners == [expected], (y, owners)
         y += step
 
@@ -76,7 +81,11 @@ def test_assembled_star_has_24_distinct_points():
     assert len(directions) == 24
 
     def angle(u, v):
-        return math.degrees(math.acos(max(-1.0, min(1.0, sum(p * q for p, q in zip(u, v))))))
+        return math.degrees(
+            math.acos(
+                max(-1.0, min(1.0, sum(p * q for p, q in zip(u, v, strict=True))))
+            )
+        )
 
     assert min(angle(u, v) for u, v in combinations(directions, 2)) > 20
 
