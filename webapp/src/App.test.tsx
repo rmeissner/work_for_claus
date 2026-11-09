@@ -107,6 +107,7 @@ describe('App', () => {
       'Calibration cube',
       'Glider',
       'Pyramid',
+      'Star Destroyer',
       'Star ornament',
     ])
   })

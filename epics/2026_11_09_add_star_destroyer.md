@@ -1,150 +1,95 @@
 # Plan: Slot-Together Star Destroyer
 
-Component: `models/star-destroyer/` (new model) and the webapp's model-discovery test.
+Component: `models/star-destroyer/` and the webapp catalog expectations.
 
 PR strategy: merge each
 
-Execution mode: web; the assistant creates phase PRs, and only the user merges.
-
----
+Execution mode: web; the assistant creates PRs, and only the user merges.
 
 ## Overview
 
-Add a small, recognizable Star Destroyer spaceship kit made from four flat PLA
-parts: a triangular hull deck, a central keel/superstructure, an underside
-cross-rib, and a transverse bridge. The parts slot together without supports,
-glue, magnets, or separate fasteners. This is a display/play model, with no flight
-requirement.
+Create a small Star Destroyer kit with an enclosed wedge hull, raised buildings,
+three recessed engines, and a bridge with two deflector shields. Target roughly
+150 mm assembled length and support-free flat printing on Claus.
 
-The initial target is approximately 150 mm long, 90 mm wide, and 35 mm tall when
-assembled. A broad wedge silhouette, layered-looking central superstructure,
-and wide aft bridge supply the recognizable features without fragile antennae.
-
-PRs: this plan; the complete printable model and catalog integration; removal
-of this plan once the model PR is merged. Implementation waits for this plan PR
-to be merged.
-
----
+The user's annotated drawing and follow-up replace the original intersecting-plate
+design. The user approved splitting the revision into hull/rear-panel work in
+PR #66, then bridge/shields in the next PR. The original four-plate geometry is
+superseded; implementation follows these revised requirements.
 
 ## Architecture Decision
 
-### Four flat parts, one generator
+Use one Python generator built on the existing `tools/stlkit` and `manifold3d`,
+committed STLs, and `project.json`. No production viewer change or new dependency
+is expected. Model folders contain only `generate.py`, metadata, and STLs.
 
-Follow the existing stars and glider: a Python generator uses `tools/stlkit` and
-`manifold3d`, exports committed STLs, and registers them in `project.json`.
-No new dependency, viewer feature, or toolkit extension is expected.
+The hull prints as a connected unfolded net, with grooves for hand folding at
+room temperature, following the approach used by the 24-point star. A six-face,
+clipped-diamond stern divides the sharp flank bend into two gentler folds.
+A transverse engine blade rises into the loosely folded hull from below. Its
+single top tab enters a closed hole formed by two half-cuts at the upper ridge.
+The two lower faces then engage rear-open slits beneath the blade's two wider,
+1 mm bottom hooks, holding the lower seam shut. This replaces the rejected rear cap, tapered
+plug, and outer collar. Coincident edges alone are insufficient for retention.
 
-The deck passes sideways through a closed horizontal slit in the central spine.
-The spine retains material at both ends of that slit. The underside cross-rib
-and the bridge attach with complementary, open-ended half-lap slots. Keep their
-joints separate from the deck slit, and preserve a feasible assembly path:
-attach the rib beneath the deck level, slide in the deck, then attach the bridge.
-The rib supports the deck from below; the bridge sits above it near the stern.
-
-Each individual part is a single connected solid. Rounded outer corners and a
-blunted bow keep the silhouette robust. Omit small turrets and radar balls in
-this first version; avoid adding loose decorative parts.
+Three raised engine bells print on top of the flat blade, with deep recesses
+opening upward to avoid supports. The blade supports the future bridge holder.
+Allow realistic clearances and leave closed stern material behind the top
+tab hole. The lower slits require guided engagement beneath the wider hooks;
+do not claim a complete rigid folding path or tested physical flexibility.
 
 ### Alternatives Considered
 
-- A solid miniature uses more material and does not provide a slot-together kit.
-- A fully paneled wedge with separate upper/lower skins has more joints and
-  requires more fitting work. Four intersecting plates are simpler to assemble.
-- Tiny separate engines, guns, or antennae add fragile pieces; suggest these
-  features in the main outlines instead.
-
----
+- Intersecting plates were too skeletal for the requested appearance.
+- A four-face diamond hull concentrates the flank bend into an approximately
+  155-degree fold. Narrow side faces split this into two gentler folds.
+- Warm folding is excluded by the user: the design must target hand assembly
+  at room temperature, with physical success to be verified on a test print.
 
 ## User Flow
 
-Select Star Destroyer in the existing model browser. The first file shows the
-assembled ship, followed by the print plate and the individual replacement parts.
-The description provides print settings, a part inventory, and assembly order.
-There are no new pages or controls.
-
----
+The browser lists the assembled preview first, followed by printable layout(s)
+and individual replacement parts. Its description explains print settings,
+folding direction, rear-panel/seam assembly, and unverified physical fit.
+The preview and flat STLs come from the same geometric definition.
 
 ## Tech Specs
 
-### Geometry and parameters
-
-Initial values in `models/star-destroyer/generate.py`, in millimeters:
-
-| Parameter | Initial value | Purpose |
-|---|---|---|
-| Hull deck length / width | 140 / 90 | Broad triangular wedge, flat stern |
-| Spine length | 148 | Leaves material beyond both ends of the deck slit |
-| Overall assembled height | about 35 | Includes keel and raised aft bridge |
-| Part thickness | 2.0 | Ten 0.2 mm layers, sturdy flat plates |
-| Slot clearance | 0.20 | Total added width, not per side |
-| Minimum material around closed slots | 2.4 | Avoid thin walls at slit ends |
-| Outer corner radius | at least 1.0 | Blunt bow, bridge ends, and rib tips |
-| Plate gap | 5.0 | Separate parts for printing |
-
-These are design targets, adjustable during geometric validation. Put thickness,
-clearance, and overall dimensions in named constants. Do not scale an exported
-STL to tune fit: scaling also changes the slot clearances. Expose clearance in
-the generator for adjustment after a physical test print.
-
-The deck outline is symmetric about the longitudinal centerline. The spine's
-upper outline rises toward the stern in broad steps to suggest the command
-superstructure. Use a transverse bridge approximately 30 mm wide and an
-underside rib sized to remain within the deck outline. No isolated decorative
-components or required support material.
-
-Build each part in its own flat print pose at Z = 0; use rigid transforms for
-the assembled preview. Validate the actual slotted shapes after rounding. The
-rib's upper surface stays below the deck's insertion path; the bridge joint
-does not intersect the deck or its slit. Check the swept deck insertion volume
-against the installed spine and rib, as well as final-pose collisions.
-
-### Files and catalog
-
-The model folder contains only these eight files:
-
-- `generate.py`, with `main()` writing next to the script using `Path(__file__)`;
-- `project.json`, name `Star Destroyer`, initial version `1.0`;
-- `combined.stl`: assembled preview, colored per part with `write_colored_stl`;
-- `star-destroyer.stl`: all four parts arranged flat on one print plate;
-- `part-hull.stl`, `part-spine.stl`, `part-rib.stl`, `part-bridge.stl`.
-
-List all six STLs in `project.json`, in that order, with clear labels. Describe
-printing in PLA at 0.2 mm layers without supports or a raft, with enough walls
-and solid layers to make the 2 mm plates solid. Give assembly order and explain
-that fit needs confirmation on Claus: do not force a tight joint; adjust the
-clearance and regenerate if needed. Include measured bounds and calculated PLA
-mass/filament estimates once generated, labeled as estimates. Do not describe
-the kit as physically tested until a print has been assembled.
-
-Use `layout_on_plate` with a layout that fits the toolkit's conservative
-220 x 220 mm envelope, which also fits Claus' 256 x 256 mm build plate. The
-assembled preview is for viewing, not for slicing as one piece.
-
-Update the expected sorted model slugs in
-`webapp/src/models/buildModels.test.ts` to include `star-destroyer` at the correct
-position. The existing loader discovers the folder without production UI edits.
+- Hull surface: **0.6 mm**. Raised building areas reach **1.2 mm** and **1.8 mm
+  total thickness**, not extra joining-tab thickness. Keep them clear of folds.
+- Add explicit folding grooves and a configurable remaining ligament thickness;
+  review both hinge continuity and room for the folded panel thickness.
+- Use the conservative toolkit envelope of 220 x 220 mm for each print plate.
+- Engine blade: three raised, recessed/tapered engine bells with intact floors;
+  two lower retaining hooks, one top locating tab, and a reserved bridge mount.
+  The lower panels have rear-open mating slits; mirrored upper-ridge half-cuts form
+  one closed tab hole with at least 1 mm of material remaining toward the stern.
+- Future bridge holder: approximately **3 mm** thick, attached to the rear panel
+  rather than relying on the thin hull skin alone.
+- Future bridge: a volumetric shape, interpreting the drawing's **10 mm** as
+  fore-aft depth unless corrected; two top shield details. Choose a support-free
+  shield construction and explain any approximation to spherical shape.
+- Use named parameters for dimensions, shell/building heights, folds, and fit.
+- Do not claim successful cold folding or secure retention before a physical
+  print. PLA groove thickness and clearance may need adjustment on Claus.
+- Export `combined.stl`, print layout(s), and one STL per actual printable part.
+  Remove obsolete skeletal part files and list every remaining STL in metadata.
+- Metadata includes current dimensions, estimated material use, assembly order,
+  and a version bump whenever the model changes.
 
 ### Validation
 
-Follow the README: do not add model-script unit tests. Add assertions inside
-the generator, which also run during the existing STL regeneration check:
+Follow the README: no model-script unit tests. Put meaningful geometry assertions
+in the generator and run the existing deterministic STL regeneration test.
+Check valid connected printable parts, separated parts on the plate, continuous
+hinge ligaments, thickness-aware folded geometry, and actual mating features.
+Distinguish intended fit contact from destructive part intersections. Verify that
+retaining features can be assembled and do not obstruct the engine cavities.
 
-- Every part is nonempty, manifold, and one connected component.
-- `assert_printable` passes for every flat part and for the complete print plate.
-- Rounded outer profiles pass `assert_rounded` before intentional slot cuts;
-  inspect the final slots for thin or detached prongs.
-- All closed-slot walls meet the stated minimum, and slot widths include the
-  configured clearance.
-- Assembled parts have negligible pairwise intersection volume; support contact
-  is allowed. The deck's sideways insertion path remains clear.
-- The plate has four separated components and matches the exported part inventory.
-
-Run `ruff check`, `ruff format --check`, and `pytest`, plus the webapp model tests,
-typecheck, lint, and build. Inspect the assembled view from multiple angles and
-the flat plate in the webapp; attach screenshots to the implementation PR. A
-physical fit check on Claus remains a separate user validation.
-
----
+Run Python lint/format and pytest, webapp tests/lint/typecheck/build. Update both
+catalog expectations when adding the model. Inspect the flat layout, top/side
+hull silhouette, and stern/engines in the browser; attach current screenshots.
+Keep an explicit physical-test limitation in the PR.
 
 ## Implementation Phases
 
@@ -152,39 +97,36 @@ physical fit check on Claus remains a separate user validation.
 
 **Depends on:** none. **Can run in parallel:** no.
 
-This specification only; no model or application changes.
+Original planning PR #65, already merged. This document records the subsequent
+user-approved design correction and phase split.
 
-### Phase 2 — Printable kit and catalog integration
+### Phase 2 — Folding hull and engine panel
 
-**Depends on:** 1, merged by the user. **Can run in parallel:** no.
+**Depends on:** 1, merged. **Can run in parallel:** no.
 
-Add the eight model files above and update the single model-discovery expectation
-in `webapp/src/models/buildModels.test.ts`. Keep the generator under approximately
-300 lines and the PR to nine files. Reuse existing toolkit functions; if a shared
-toolkit change becomes necessary, propose a separate phase before including it.
+Revise PR #66 with the thin folded shell, raised buildings, bottom-hooked engine blade,
+three engine recesses, flat/assembled exports, and catalog instructions. Remove
+obsolete spine/rib/bridge parts from the rejected skeletal iteration. Reserve
+the bridge mount but do not include bridge/shield parts in this PR.
 
-Review slot accessibility, material around joints, and recognizable silhouette.
-The PR includes assembled/plate screenshots, generated dimensions and material
-estimates, check results, and the unverified physical-fit limitation.
+### Phase 3 — Bridge, holder, and shields
 
-### Phase 3 — Remove the plan
+**Depends on:** 2, merged after user review. **Can run in parallel:** no.
 
-**Depends on:** 2, merged by the user. **Can run in parallel:** no.
+Add the 3 mm holder, volumetric bridge, and two top shields. Validate retention,
+support-free print orientations, assembly access, and the complete silhouette.
+Update metadata, version, exports, and screenshots.
 
-Delete this specification once all implementation work is merged. No unrelated
-cleanup or changes to the glider epic.
+### Phase 4 — Remove the plan
 
----
+**Depends on:** 3, merged. **Can run in parallel:** no.
+
+Verify all phases and remove this specification. Do not change the glider epic.
 
 ## Open Questions and Assumptions
 
-- Small means approximately 150 mm long; PLA and a 0.4 mm nozzle are assumed.
-- This is a stylized Imperial Star Destroyer, prioritizing the wedge and bridge
-  over screen-accurate surface detail.
-- The initial 0.20 mm total slot clearance is a starting point. Printer accuracy
-  and filament affect retention; only a physical print establishes the fit.
-- No glue is required by the intended design. If friction retention is inadequate,
-  revise the joint design rather than claiming an untested fit is secure.
-- There are no magnets, coins, moving parts, display stand, or miniature variant.
-- Work proceeds in web mode as explicitly clarified by the user, overriding the
-  skill's environment-variable detection. Each phase PR targets `main`.
+- PLA, a 0.4 mm nozzle, 0.2 mm layers, and roughly 150 mm length are assumed.
+- Cold folding is required; hinge durability and retention need a physical print.
+- The six-face stern and 10 mm bridge-depth interpretation are implementation
+  choices derived from the drawing, to review through the next previews.
+- No flight requirement, magnets, coins, or separate display stand.

@@ -1,0 +1,11 @@
+{
+  "name": "Star Destroyer",
+  "version": "1.3",
+  "description": "Folding Star Destroyer hull with raised buildings and an engine blade. Two lower hooks hold the folded bottom panels shut; one top tab locates in the upper ridge hole. Assembled: 149.7 x 91.1 x 22.3 mm. Hull and blade fit one 148.3 x 202.6 mm print plate. Estimated PLA: 15 g / 5 m. Bridge and shields follow next.\nPrint flat in PLA, 0.4 mm nozzle, 0.2 mm layers, solid parts, no supports. Shell: 0.6 mm; buildings: 1.2 and 1.8 mm total thickness. Five 2 mm-wide fold grooves leave a 0.4 mm skin. Print the 1.2 mm blade with raised engines facing up; recesses are 3.6 mm deep with 2 mm floors.\nAssembly: form the upper roof and side facets, leaving both lower panels open. Keep engines facing aft and the bridge mounting slot uppermost. Raise the blade from below and seat its single top tab in the closed ridge hole. Fold the lower panels shut, guiding each rear-open slit around a lower hook stalk and beneath its wider head. Gently flex or slide the open stern ends into place; do not force the heads through the narrow slits.\nCold folding and retention need a test print on Claus. The preview shows ideal geometry, not material bending. Fold once gently; stop if PLA cracks. Groove and fit parameters are adjustable in generate.py. Do not scale STLs to change fit. combined.stl is for viewing only.",
+  "files": [
+    {"file": "combined.stl", "name": "Assembled hull and engine blade (preview only)"},
+    {"file": "star-destroyer.stl", "name": "Print plate (hull and engine blade)"},
+    {"file": "part-hull.stl", "name": "Folding hull with lower hook slits and top tab hole"},
+    {"file": "part-rear.stl", "name": "Engine blade with lower hooks and single top tab"}
+  ]
+}
