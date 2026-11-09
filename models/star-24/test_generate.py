@@ -33,6 +33,15 @@ def test_parts_are_printable():
     assert_printable(generate.build_plate())
 
 
+def test_parts_are_five_layers_and_the_fold_keeps_three():
+    layer = 0.2
+    assert generate.THICKNESS == pytest.approx(5 * layer)
+    assert generate.FOLD_THICKNESS == pytest.approx(3 * layer)
+    assert generate.FOLD_WIDTH == pytest.approx(1.0)
+    # The slits follow the thickness, so the thinner parts still fit snugly.
+    assert generate.SLIT_WIDTH == pytest.approx(generate.THICKNESS + 0.3)
+
+
 def test_plate_fits_the_build_volume():
     x0, y0, z0, x1, y1, z1 = generate.build_plate().bounding_box()
     assert (x1 - x0, y1 - y0, z1 - z0) < (220, 220, 250)
