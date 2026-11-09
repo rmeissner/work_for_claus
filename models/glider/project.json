@@ -1,0 +1,14 @@
+{
+  "name": "Glider",
+  "version": "1.0",
+  "description": "Kid-safe slot-together glider: a fuselage with a round nose and a fin, a wing and a tail that slide through slits in the fuselage. It flies a bit better than a paper airplane because its center of gravity and wing angles are built in.\nPrint flat without supports in PLA, 0.2 mm layers, 100 % infill (the balance assumes solid parts): about 4.7 m of filament. Press a 2 cent euro coin flat into the round pocket in the nose; it is the nose weight, and the total mass with the coin is about 17 g. The mini plate (70 %, about 2.3 m of filament) is a cheap test print: it takes a 1 cent euro coin, and its total mass with the coin is about 9 g. Fix the coin with a drop of glue or a piece of tape before giving the glider to small children: a loose coin is a choking hazard. Slide the tail through the rear slit and the wing through the front slit until both are centered (notch marks on the wing and the tail).\nLaunch: pinch the body below the wing, about a third back from the wing's leading edge (near the balance point), with the wings level and the nose 5-10° down, and give it a gentle push at jogging speed. If it dives, bend the tail's trailing edge up slightly; if it climbs and stalls, bend it down. Don't throw at people, and throw away broken parts: broken PLA can be sharp.",
+  "files": [
+    { "file": "combined.stl", "name": "Assembled glider" },
+    { "file": "glider.stl", "name": "Print plate" },
+    { "file": "part-fuselage.stl", "name": "Fuselage" },
+    { "file": "part-wing.stl", "name": "Wing" },
+    { "file": "part-tail.stl", "name": "Tail" },
+    { "file": "mini-combined.stl", "name": "Mini assembled glider (70 %)" },
+    { "file": "mini-glider.stl", "name": "Mini print plate (70 %)" }
+  ]
+}
