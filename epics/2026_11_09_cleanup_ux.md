@@ -68,6 +68,7 @@ The versions use the muted text color and a smaller font size.
 MODELS = Path(__file__).resolve().parents[3] / "models"
 SCRIPTS = sorted(MODELS.glob("*/generate.py"))
 
+
 @pytest.mark.parametrize("script", SCRIPTS, ids=lambda p: p.parent.name)
 def test_committed_stls_are_up_to_date(tmp_path, script):
     copy = shutil.copytree(script.parent, tmp_path / script.parent.name)
