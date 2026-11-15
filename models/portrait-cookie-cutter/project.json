@@ -1,0 +1,19 @@
+{
+  "name": "Portrait cookie cutter",
+  "version": "1.0",
+  "description": "100 mm portrait cookie cutter with a separate mirrored detail stamp, simplified from a photo: cap, hair, eyes and smile. Tiny cap graphics use a generic ninja motif. Print flat with a 0.4 mm nozzle, 0.16\u20130.20 mm layers, 3\u20134 walls; no supports. Stamp gently 1.5\u20132 mm into 5\u20136 mm chilled dough. Use food-contact-suitable material and equipment; hand-clean thoroughly. Mesh checked, not physically test-printed.",
+  "files": [
+    {
+      "file": "portrait-cookie-cutter.stl",
+      "name": "Cutter + stamp \u2014 print plate"
+    },
+    {
+      "file": "part-cutter.stl",
+      "name": "Outline cutter"
+    },
+    {
+      "file": "part-stamp.stl",
+      "name": "Detail stamp (already mirrored)"
+    }
+  ]
+}

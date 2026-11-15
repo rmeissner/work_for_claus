@@ -106,6 +106,7 @@ describe('App', () => {
       '24-point star',
       'Calibration cube',
       'Glider',
+      'Portrait cookie cutter',
       'Pyramid',
       'Star Destroyer',
       'Star ornament',
