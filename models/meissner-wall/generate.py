@@ -2,9 +2,8 @@
 
 Run from the repo root: ``python models/meissner-wall/generate.py``.
 Print meissner-wall.stl (ten separate bricks), not combined.stl (assembly preview).
-All dimensions are mm. Viewed from the lettered front, assemble left to right:
-bottom B1 B2 B3; middle M1 M2 M3 M4; top T1 T2 T3. Small recessed labels
-on the backs identify parts. The print plate has bottom parts at the back,
+All dimensions are mm. Bricks have plain backs with no placement labels.
+The print plate has bottom parts at the back,
 middle parts in the center, and top parts at the front, all left to right.
 """
 
@@ -29,13 +28,11 @@ COURSES = ((4, 4, 4), (2, 4, 4, 2), (4, 4, 4))
 TEXT_WIDTH = 84.0
 TEXT_HEIGHT = 20.0
 IMPRINT_DEPTH = 0.6  # leaves 0.9 mm of the tested 1.5 mm front wall
-LABEL_DEPTH = 0.3
 FIT_ADJUSTMENT = 0.0
 PRINT_GAP = 5.0
 OUTPUT = Path(__file__).with_name("meissner-wall.stl")
 COMBINED_OUTPUT = Path(__file__).with_name("combined.stl")
 ROW_NAMES = ("bottom", "middle", "top")
-ROW_CODES = ("B", "M", "T")
 ROW_COLORS = ((214, 172, 112), (192, 145, 89), (214, 172, 112))
 
 
@@ -61,10 +58,6 @@ def parts():
             brick = build_brick(width, fit_adjustment=FIT_ADJUSTMENT)
             placed = brick.translate(position) - imprint
             local = placed.translate(tuple(-p for p in position))
-            label = text_shape(f"{ROW_CODES[row]}{index}", width=4, height=2.5)
-            # Readable from the back; label does not reach the cavity or front.
-            label_cut = extrude(label, LABEL_DEPTH + 0.1).rotate((90, 0, 180))
-            local -= label_cut.translate((0, -front_y - LABEL_DEPTH, 2.5))
             assert_printable(local)
             if len(local.decompose()) != 1:
                 raise ValueError("engraving disconnected a brick")
