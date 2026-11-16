@@ -15,7 +15,7 @@ def _glyphs() -> dict:
 
 
 def text_shape(text: str, *, width: float, height: float) -> CrossSection:
-    """Fit printable ASCII into a centered box, preserving its aspect ratio.
+    """Fit bundled characters (ASCII and ä) into a centered box, preserving its aspect ratio.
 
     Width and height are maximum ink bounds in mm. Spaces advance the pen;
     counters (holes inside letters) remain empty. See fonts/ for provenance.

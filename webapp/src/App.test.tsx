@@ -106,6 +106,7 @@ describe('App', () => {
       '24-point star',
       'Calibration cube',
       'Glider',
+      'Käte wall',
       'Klemmbaustein 2 x 4',
       'Meissner wall',
       'Pyramid',

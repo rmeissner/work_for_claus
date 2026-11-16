@@ -21,8 +21,17 @@ def test_text_keeps_letter_counters_open():
 
 
 @pytest.mark.parametrize(
-    "text,width,height", [(" ", 10, 10), ("a", 0, 10), ("a", 10, -1), ("ä", 10, 10)]
+    "text,width,height", [(" ", 10, 10), ("a", 0, 10), ("a", 10, -1), ("Ж", 10, 10)]
 )
 def test_text_rejects_invalid_input(text, width, height):
     with pytest.raises(ValueError):
         text_shape(text, width=width, height=height)
+
+
+def test_umlaut_keeps_both_dots_above_the_letter():
+    letter = text_shape("ä", width=10, height=10)
+    pieces = sorted(letter.decompose(), key=lambda p: p.area())
+    assert len(pieces) == 3
+    dot_a, dot_b, body = pieces
+    assert dot_a.area() == pytest.approx(dot_b.area(), rel=0.03)
+    assert min(dot_a.bounds()[1], dot_b.bounds()[1]) > body.bounds()[3]
