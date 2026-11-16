@@ -1,0 +1,55 @@
+{
+  "name": "Meissner wall",
+  "version": "1.0",
+  "description": "Interlocking wall with recessed Meissner lettering across the front: 12 studs wide, 3 bricks high, and 2 studs thick. Assembled body: 95.8 x 15.8 x 28.8 mm (30.6 mm including top studs). Ten separate bricks with staggered joints; uses the tested 2 x 4 brick geometry plus 2 x 2 end bricks. The text recess is 0.6 mm deep, leaving 0.9 mm of front wall.\nPrint meissner-wall.stl once for all ten bricks, or print each individual part once. combined.stl is an assembly preview, not a printable solid. Use 100% scale, studs up, open undersides on the bed, supports off, and 0.12-0.16 mm layers. Disable internal brims; an outer brim is optional if adhesion needs it.\nAssembly, viewed from the lettered front, left to right: bottom B1 B2 B3; middle M1 M2 M3 M4; top T1 T2 T3. Small recessed labels on the backs identify parts. On the print plate the bottom row is at the back (+Y), middle row in the center, and top row at the front (-Y), each ordered left to right (+X). Keep every lettered face facing the same way.\nThe base brick was successfully test-printed; the engraved wall and 2 x 2 end bricks still need a physical fit and lettering test.",
+  "files": [
+    {
+      "file": "combined.stl",
+      "name": "Assembled wall (preview only)"
+    },
+    {
+      "file": "meissner-wall.stl",
+      "name": "Print plate - all 10 bricks"
+    },
+    {
+      "file": "bottom-1.stl",
+      "name": "B1 - Bottom row, position 1"
+    },
+    {
+      "file": "bottom-2.stl",
+      "name": "B2 - Bottom row, position 2"
+    },
+    {
+      "file": "bottom-3.stl",
+      "name": "B3 - Bottom row, position 3"
+    },
+    {
+      "file": "middle-1.stl",
+      "name": "M1 - Middle row, position 1"
+    },
+    {
+      "file": "middle-2.stl",
+      "name": "M2 - Middle row, position 2"
+    },
+    {
+      "file": "middle-3.stl",
+      "name": "M3 - Middle row, position 3"
+    },
+    {
+      "file": "middle-4.stl",
+      "name": "M4 - Middle row, position 4"
+    },
+    {
+      "file": "top-1.stl",
+      "name": "T1 - Top row, position 1"
+    },
+    {
+      "file": "top-2.stl",
+      "name": "T2 - Top row, position 2"
+    },
+    {
+      "file": "top-3.stl",
+      "name": "T3 - Top row, position 3"
+    }
+  ]
+}
