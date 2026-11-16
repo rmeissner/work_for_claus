@@ -1,7 +1,7 @@
 {
   "name": "Käte wall",
-  "version": "1.0",
-  "description": "Four separate 2 x 4 bricks form a small wall with Käte recessed across the front, including both umlaut dots. Two bricks wide and two bricks high: 8 studs wide, 2 studs deep; body 63.8 x 15.8 x 19.2 mm, or 21 mm tall including top studs. Text recess 0.6 mm deep; plain backs with no placement labels.\nPrint kate-wall.stl once for all four bricks, at 100% scale with studs up and open undersides on the bed. Supports off, internal brims off, 0.12-0.16 mm layers. combined.stl is a preview only. Individual bricks are also available. Both rows use full 2 x 4 bricks, so the center joint is aligned; attach the wall to a baseplate or staggered foundation if extra stability is needed.\nThis is a smaller lettering test for the Meissner wall. The base brick has been physically tested; this engraving has not.",
+  "version": "1.1",
+  "description": "Four interlocking bricks form a small wall with Käte recessed across the front, including both umlaut dots. Uses two 2 x 4 bricks and two 2 x 2 bricks in staggered rows: bottom 2 x 4 then 2 x 2; top 2 x 2 then 2 x 4, viewed from the front. Six studs wide, two bricks high, two studs deep; body 47.8 x 15.8 x 19.2 mm, or 21 mm tall including top studs. Text recess 0.6 mm deep; plain backs with no placement labels.\nPrint kate-wall.stl once for all four bricks, at 100% scale with studs up and open undersides on the bed. Supports off, internal brims off, 0.12-0.16 mm layers. combined.stl is a preview only. Individual bricks are also available.\nThis is a smaller lettering test for the Meissner wall. The base brick has been physically tested; this engraving has not.",
   "files": [
     {
       "file": "combined.stl",

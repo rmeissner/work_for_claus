@@ -14,8 +14,8 @@ from stlkit import write_colored_stl, write_stl
 from stlkit.walls import wall_parts, wall_print_plate
 
 TEXT = "Käte"
-COURSES = ((4, 4), (4, 4))
-TEXT_WIDTH = 54.0
+COURSES = ((4, 2), (2, 4))
+TEXT_WIDTH = 40.0
 TEXT_HEIGHT = 14.0
 IMPRINT_DEPTH = 0.6
 FIT_ADJUSTMENT = 0.0
