@@ -44,3 +44,37 @@ def test_looser_fit_preserves_body_bounds_and_reduces_material():
 def test_invalid_brick_dimensions_are_rejected(columns, adjustment):
     with pytest.raises(ValueError):
         build_brick(columns, fit_adjustment=adjustment)
+
+
+@pytest.mark.parametrize("columns", [2, 4])
+def test_thin_bricks_have_one_stud_row_and_solid_clutch_pins(columns):
+    brick = build_brick(columns, studs_y=1)
+    assert_printable(brick)
+    assert len(brick.decompose()) == 1
+    assert brick.bounding_box() == pytest.approx(
+        (-(columns * 8 - 0.2) / 2, -3.9, 0, (columns * 8 - 0.2) / 2, 3.9, 11.4)
+    )
+    studs = sorted(brick.slice(10.2).decompose(), key=lambda s: s.bounds()[0])
+    assert len(studs) == columns
+    for index, stud in enumerate(studs):
+        x0, y0, x1, y1 = stud.bounds()
+        assert (x1 - x0, y1 - y0) == pytest.approx((5, 5))
+        assert (x0 + x1) / 2 == pytest.approx((index - (columns - 1) / 2) * 8)
+        assert y0 + y1 == pytest.approx(0)
+    # A lower section contains the shell and N-1 separate solid support pins.
+    sections = brick.slice(1).decompose()
+    assert len(sections) == columns
+    pins = sorted(sections, key=lambda s: s.area())[:-1]
+    assert len(pins) == columns - 1
+    for pin in pins:
+        assert len(pin.to_polygons()) == 1  # no bore in a one-row support
+        x0, y0, x1, y1 = pin.bounds()
+        assert (x1 - x0, y1 - y0) == pytest.approx((3.2, 3.2))
+    nominal = build_brick(columns, studs_y=1, stud_diameter=4.8)
+    assert abs((nominal ^ nominal.translate((0, 0, 9.6))).volume()) < 1e-6
+
+
+@pytest.mark.parametrize("depth", [0, 3, 1.5])
+def test_invalid_stud_depth_is_rejected(depth):
+    with pytest.raises(ValueError):
+        build_brick(studs_y=depth)
