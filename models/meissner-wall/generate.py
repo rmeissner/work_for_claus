@@ -17,17 +17,17 @@ IMPRINT_DEPTH = 0.6
 FIT_ADJUSTMENT = 0.0
 PRINT_GAP = 5.0
 KEYRING_HOLE_DIAMETER = 5.0  # upper-left brick only, viewed from the lettered front
-# slug, lettering, stud counts per course, maximum text width and height
+# slug, lettering, stud counts per course, max text width/height, include key-ring option
 VARIANTS = (
-    ("meissner", "Meissner", ((4, 4, 4), (2, 4, 4, 2), (4, 4, 4)), 84.0, 20.0),
-    ("kate", "Käte", ((4, 2), (2, 4)), 40.0, 14.0),
-    ("carlo", "Carlo", ((4, 4), (2, 4, 2)), 54.0, 14.0),
+    ("meissner", "Meissner", ((4, 4, 4), (2, 4, 4, 2), (4, 4, 4)), 84.0, 20.0, False),
+    ("kate", "Käte", ((4, 2), (2, 4)), 40.0, 14.0, False),
+    ("carlo", "Carlo", ((4, 4), (2, 4, 2)), 54.0, 14.0, True),
 )
 ROW_COLORS = ((214, 172, 112), (192, 145, 89), (214, 172, 112))
 
 
 def parts(variant, *, keyring=False):
-    _, text, courses, width, height = variant
+    _, text, courses, width, height, _ = variant
     rows = ("bottom", "middle", "top") if len(courses) == 3 else ("bottom", "top")
     return wall_parts(
         text,
@@ -43,19 +43,19 @@ def parts(variant, *, keyring=False):
 
 def main() -> None:
     for variant in VARIANTS:
-        slug = variant[0]
+        slug, _, courses, _, _, include_keyring = variant
         bricks = parts(variant)
         print_bricks = list(bricks)
         preview_parts = [
             (part.translate(position), ROW_COLORS[row])
             for _, part, position, row in bricks
         ]
-        if slug == "carlo":
+        if include_keyring:
             ring_bricks = parts(variant, keyring=True)
             ring_corner = next(item for item in ring_bricks if item[0] == "top-1")
             print_bricks.append(ring_corner)
             # Show the two complete configurations; shared bricks print only once.
-            wall_width = sum(variant[2][0]) * 8 - 0.2
+            wall_width = sum(courses[0]) * 8 - 0.2
             offset = (wall_width + 10) / 2
             preview_parts = [
                 (part.translate(position).translate((shift, 0, 0)), ROW_COLORS[row])
