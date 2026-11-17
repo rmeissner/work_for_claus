@@ -55,11 +55,14 @@ def wall_parts(
 def wall_print_plate(bricks, *, gap=5.0):
     """Keep each assembled course in its own row, each row centered on the bed."""
     row_count = max(row for _, _, _, row in bricks) + 1
+    depth = max(
+        part.bounding_box()[4] - part.bounding_box()[1] for _, part, _, _ in bricks
+    )
     rows = []
     for row in range(row_count):
         course = [part for _, part, _, r in bricks if r == row]
         line = layout_on_plate(course, gap)
-        rows.append(line.translate((0, ((row_count - 1) / 2 - row) * (15.8 + gap), 0)))
+        rows.append(line.translate((0, ((row_count - 1) / 2 - row) * (depth + gap), 0)))
     plate = rows[0]
     for row in rows[1:]:
         plate += row

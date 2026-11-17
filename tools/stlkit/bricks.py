@@ -1,4 +1,4 @@
-"""Two-stud-deep interlocking bricks with adjustable stud diameter."""
+"""One- or two-stud-deep interlocking bricks with adjustable stud diameter."""
 
 from manifold3d import Manifold
 
@@ -13,16 +13,21 @@ STUD_HEIGHT = 1.8
 STUD_TOP_CHAMFER = 0.15
 TUBE_OUTER_DIAMETER = 6.51
 TUBE_INNER_DIAMETER = 4.8
+PIN_DIAMETER = 3.2  # solid supports between nominal 4.8 mm studs in a single row
 SEGMENTS = 96
 
 
 def build_brick(
     studs_x: int = 4,
     *,
+    studs_y: int = STUDS_Y,
     fit_adjustment: float = 0.0,
     stud_diameter: float = STUD_DIAMETER,
 ) -> Manifold:
-    """Build a 2 x N open-bottom brick with solid studs and clutch tubes.
+    """Build a 1 x N or 2 x N open-bottom brick with solid top studs.
+
+    Single-row bricks have solid underside pins between studs; double-row
+    bricks retain their clutch tubes. The default remains the tested 2 x 4.
 
     Positive fit_adjustment loosens mating surfaces by that radial distance
     in mm; negative values tighten them. stud_diameter changes only the top
@@ -30,18 +35,22 @@ def build_brick(
     0.1 mm radius to the initial 4.8 mm studs to compensate for a loose print.
     """
     if not isinstance(studs_x, int) or studs_x < 2:
-        raise ValueError("a two-stud-deep brick needs at least two columns")
+        raise ValueError("a brick needs at least two columns")
+    if not isinstance(studs_y, int) or studs_y not in (1, 2):
+        raise ValueError("a brick must be one or two studs deep")
     length = studs_x * PITCH - BODY_GAP
-    width = STUDS_Y * PITCH - BODY_GAP
+    width = studs_y * PITCH - BODY_GAP
     wall = WALL_THICKNESS - fit_adjustment
     stud_radius = stud_diameter / 2 - fit_adjustment
     tube_outer = TUBE_OUTER_DIAMETER / 2 - fit_adjustment
     tube_inner = TUBE_INNER_DIAMETER / 2 + fit_adjustment
+    pin_radius = PIN_DIAMETER / 2 - fit_adjustment
     cavity_height = BODY_HEIGHT - ROOF_THICKNESS
     if not (
         0 < wall < width / 2
         and STUD_TOP_CHAMFER < stud_radius < PITCH / 2
         and 0 < tube_inner < tube_outer < PITCH / 2
+        and pin_radius > 0
     ):
         raise ValueError("fit_adjustment leaves invalid walls, studs, or tubes")
 
@@ -64,19 +73,22 @@ def build_brick(
         circular_segments=SEGMENTS,
     ).translate((0, 0, STUD_HEIGHT - STUD_TOP_CHAMFER))
     for column in range(studs_x):
-        for row in range(STUDS_Y):
+        for row in range(studs_y):
             brick += stud.translate(
                 (
                     (column - (studs_x - 1) / 2) * PITCH,
-                    (row - (STUDS_Y - 1) / 2) * PITCH,
+                    (row - (studs_y - 1) / 2) * PITCH,
                     BODY_HEIGHT,
                 )
             )
 
     # Preserve the underside sized for nominal 4.8 mm LEGO studs. The enlarged
     # printed studs intentionally have a small interference fit with this.
-    tube = Manifold.cylinder(cavity_height, tube_outer, circular_segments=SEGMENTS)
-    tube -= Manifold.cylinder(cavity_height, tube_inner, circular_segments=SEGMENTS)
+    if studs_y == 1:
+        tube = Manifold.cylinder(cavity_height, pin_radius, circular_segments=SEGMENTS)
+    else:
+        tube = Manifold.cylinder(cavity_height, tube_outer, circular_segments=SEGMENTS)
+        tube -= Manifold.cylinder(cavity_height, tube_inner, circular_segments=SEGMENTS)
     for column in range(studs_x - 1):
         brick += tube.translate(((column - (studs_x - 2) / 2) * PITCH, 0, 0))
     return brick

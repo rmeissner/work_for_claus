@@ -1,0 +1,15 @@
+{
+  "name": "Klemmbaustein 1 x 4",
+  "version": "1.0",
+  "description": "Thin interlocking bricks with one row of studs: 1 x 4 body 31.8 x 7.8 x 9.6 mm, and 1 x 2 body 15.8 x 7.8 x 9.6 mm. Total height 11.4 mm including studs. Uses the tested 5.0 mm stud diameter, 8 mm pitch and 1.8 mm stud height. The open underside uses solid 3.2 mm support pins between studs, instead of the tubes in two-row bricks. The underside remains sized for nominal 4.8 mm LEGO studs; single-row clutch fit still needs a physical test.\nPrint at 100% scale, open underside on the bed, studs up, supports and internal brims off, starting with 0.12-0.16 mm layers. Both sizes are supplied for a fit test before printing a thin wall.",
+  "files": [
+    {
+      "file": "klemmbaustein-1x4.stl",
+      "name": "Thin 1 x 4 brick"
+    },
+    {
+      "file": "klemmbaustein-1x2.stl",
+      "name": "Thin 1 x 2 brick"
+    }
+  ]
+}

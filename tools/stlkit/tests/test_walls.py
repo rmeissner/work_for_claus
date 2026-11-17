@@ -1,6 +1,7 @@
 import pytest
 from manifold3d import Manifold
 from stlkit import assert_printable
+from stlkit.bricks import build_brick
 from stlkit.walls import wall_parts, wall_print_plate
 
 
@@ -53,3 +54,12 @@ def test_invalid_wall_geometry_is_rejected(courses, names, depth):
         wall_parts(
             "Käte", courses, names, text_width=40, text_height=14, imprint_depth=depth
         )
+
+
+def test_thin_wall_plate_spacing_uses_the_actual_brick_depth():
+    brick = build_brick(2, studs_y=1)
+    parts = [(str(index), brick, (0, 0, 0), index // 2) for index in range(4)]
+    plate = wall_print_plate(parts)
+    assert_printable(plate)
+    assert len(plate.decompose()) == 4
+    assert plate.bounding_box() == pytest.approx((-18.3, -10.3, 0, 18.3, 10.3, 11.4))
