@@ -8,7 +8,7 @@ BODY_GAP = 0.2  # clearance between neighboring bricks on the 8 mm grid
 BODY_HEIGHT = 9.6
 WALL_THICKNESS = 1.5
 ROOF_THICKNESS = 1.2
-STUD_DIAMETER = 4.9  # +0.1 mm diameter after the physical clutch-fit test
+STUD_DIAMETER = 5.0  # 4.8 and 4.9 mm studs were loose in physical fit tests
 STUD_HEIGHT = 1.8
 STUD_TOP_CHAMFER = 0.15
 TUBE_OUTER_DIAMETER = 6.51
@@ -26,8 +26,8 @@ def build_brick(
 
     Positive fit_adjustment loosens mating surfaces by that radial distance
     in mm; negative values tighten them. stud_diameter changes only the top
-    studs, preserving the underside clutch geometry. The 4.9 mm default adds
-    0.05 mm radius to the initial 4.8 mm studs to compensate for a loose print.
+    studs, preserving the underside clutch geometry. The 5.0 mm default adds
+    0.1 mm radius to the initial 4.8 mm studs to compensate for a loose print.
     """
     if not isinstance(studs_x, int) or studs_x < 2:
         raise ValueError("a two-stud-deep brick needs at least two columns")

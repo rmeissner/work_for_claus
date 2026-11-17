@@ -30,7 +30,7 @@ def test_larger_studs_preserve_the_tested_underside():
     assert len(studs) == 8
     for stud in studs:
         x0, y0, x1, y1 = stud.bounds()
-        assert (x1 - x0, y1 - y0) == pytest.approx((4.9, 4.9))
+        assert (x1 - x0, y1 - y0) == pytest.approx((5.0, 5.0))
 
 
 def test_looser_fit_preserves_body_bounds_and_reduces_material():
