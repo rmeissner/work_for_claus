@@ -2,6 +2,7 @@
 
 from . import assert_printable, extrude, layout_on_plate
 from .bricks import BODY_HEIGHT, PITCH, WALL_THICKNESS, build_brick
+from .keyrings import with_keyring_passage
 from .text import text_shape
 
 
@@ -14,6 +15,7 @@ def wall_parts(
     text_height,
     imprint_depth=0.6,
     fit_adjustment=0.0,
+    keyring_diameter=None,
 ):
     """Return (filename stem, printable part, assembled position, row) tuples."""
     wall_studs = sum(courses[0])
@@ -39,6 +41,8 @@ def wall_parts(
             brick = build_brick(width, fit_adjustment=fit_adjustment)
             placed = brick.translate(position) - imprint
             local = placed.translate(tuple(-p for p in position))
+            if keyring_diameter is not None and row == len(courses) - 1 and index == 1:
+                local = with_keyring_passage(local, keyring_diameter)
             assert_printable(local)
             if len(local.decompose()) != 1:
                 raise ValueError("engraving disconnected a brick")

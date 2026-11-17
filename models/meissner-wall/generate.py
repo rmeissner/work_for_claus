@@ -16,6 +16,7 @@ from stlkit.walls import wall_parts, wall_print_plate
 IMPRINT_DEPTH = 0.6
 FIT_ADJUSTMENT = 0.0
 PRINT_GAP = 5.0
+KEYRING_HOLE_DIAMETER = 5.0  # upper-left brick only, viewed from the lettered front
 # slug, lettering, stud counts per course, maximum text width and height
 VARIANTS = (
     ("meissner", "Meissner", ((4, 4, 4), (2, 4, 4, 2), (4, 4, 4)), 84.0, 20.0),
@@ -26,7 +27,7 @@ ROW_COLORS = ((214, 172, 112), (192, 145, 89), (214, 172, 112))
 
 
 def parts(variant):
-    _, text, courses, width, height = variant
+    slug, text, courses, width, height = variant
     rows = ("bottom", "middle", "top") if len(courses) == 3 else ("bottom", "top")
     return wall_parts(
         text,
@@ -36,6 +37,7 @@ def parts(variant):
         text_height=height,
         imprint_depth=IMPRINT_DEPTH,
         fit_adjustment=FIT_ADJUSTMENT,
+        keyring_diameter=KEYRING_HOLE_DIAMETER if slug == "carlo" else None,
     )
 
 
