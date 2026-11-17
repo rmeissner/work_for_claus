@@ -31,7 +31,13 @@ def test_four_brick_wall_has_plain_backs_and_separate_printable_parts():
     assert plate.bounding_box() == pytest.approx((-26.3, -18.3, 0, 26.3, 18.3, 11.4))
     for index, (_, a, pa, _) in enumerate(bricks):
         for _, b, pb, _ in bricks[index + 1 :]:
-            assert abs((a.translate(pa) ^ b.translate(pb)).volume()) < 1e-6
+            grip = a.translate(pa) ^ b.translate(pb)
+            if pa[2] == pb[2]:
+                assert abs(grip.volume()) < 1e-6
+            elif not grip.is_empty():
+                # The enlarged studs intentionally compress at mating surfaces.
+                assert grip.bounding_box()[2] >= max(pa[2], pb[2]) - 1e-6
+                assert grip.bounding_box()[5] <= max(pa[2], pb[2]) + 1.8 + 1e-6
 
 
 @pytest.mark.parametrize(

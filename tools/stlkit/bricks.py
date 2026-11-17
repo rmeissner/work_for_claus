@@ -1,4 +1,4 @@
-"""Two-stud-deep interlocking bricks, preserving the tested 2 x 4 geometry."""
+"""Two-stud-deep interlocking bricks with adjustable stud diameter."""
 
 from manifold3d import Manifold
 
@@ -8,7 +8,7 @@ BODY_GAP = 0.2  # clearance between neighboring bricks on the 8 mm grid
 BODY_HEIGHT = 9.6
 WALL_THICKNESS = 1.5
 ROOF_THICKNESS = 1.2
-STUD_DIAMETER = 4.8
+STUD_DIAMETER = 4.9  # +0.1 mm diameter after the physical clutch-fit test
 STUD_HEIGHT = 1.8
 STUD_TOP_CHAMFER = 0.15
 TUBE_OUTER_DIAMETER = 6.51
@@ -16,18 +16,25 @@ TUBE_INNER_DIAMETER = 4.8
 SEGMENTS = 96
 
 
-def build_brick(studs_x: int = 4, *, fit_adjustment: float = 0.0) -> Manifold:
+def build_brick(
+    studs_x: int = 4,
+    *,
+    fit_adjustment: float = 0.0,
+    stud_diameter: float = STUD_DIAMETER,
+) -> Manifold:
     """Build a 2 x N open-bottom brick with solid studs and clutch tubes.
 
     Positive fit_adjustment loosens mating surfaces by that radial distance
-    in mm; negative values tighten them. The default 2 x 4 is the tested brick.
+    in mm; negative values tighten them. stud_diameter changes only the top
+    studs, preserving the underside clutch geometry. The 4.9 mm default adds
+    0.05 mm radius to the initial 4.8 mm studs to compensate for a loose print.
     """
     if not isinstance(studs_x, int) or studs_x < 2:
         raise ValueError("a two-stud-deep brick needs at least two columns")
     length = studs_x * PITCH - BODY_GAP
     width = STUDS_Y * PITCH - BODY_GAP
     wall = WALL_THICKNESS - fit_adjustment
-    stud_radius = STUD_DIAMETER / 2 - fit_adjustment
+    stud_radius = stud_diameter / 2 - fit_adjustment
     tube_outer = TUBE_OUTER_DIAMETER / 2 - fit_adjustment
     tube_inner = TUBE_INNER_DIAMETER / 2 + fit_adjustment
     cavity_height = BODY_HEIGHT - ROOF_THICKNESS
@@ -66,8 +73,8 @@ def build_brick(studs_x: int = 4, *, fit_adjustment: float = 0.0) -> Manifold:
                 )
             )
 
-    # Tube OD is tangent to the four surrounding studs of a mating brick;
-    # the bore also accepts a single stud when the brick is offset half a pitch.
+    # Preserve the underside sized for nominal 4.8 mm LEGO studs. The enlarged
+    # printed studs intentionally have a small interference fit with this.
     tube = Manifold.cylinder(cavity_height, tube_outer, circular_segments=SEGMENTS)
     tube -= Manifold.cylinder(cavity_height, tube_inner, circular_segments=SEGMENTS)
     for column in range(studs_x - 1):

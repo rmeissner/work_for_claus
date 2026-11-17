@@ -1,8 +1,11 @@
 {
   "name": "Klemmbaustein 2 x 4",
-  "version": "1.0",
-  "description": "Simple brick designed for LEGO compatibility: eight studs on an 8 mm grid, an open underside, and three clutch tubes. Body: 31.8 x 15.8 x 9.6 mm; total height with studs: 11.4 mm. Print at 100% scale with the open underside on the bed and studs up, supports off, and 0.12-0.16 mm layers. Use elephant-foot compensation and inspect the first roof bridge in the slicer. Physical clutch fit is unverified and depends on printer and material: test one brick first. Adjust FIT_ADJUSTMENT in generate.py in 0.025 mm steps (positive for looser, negative for tighter) and regenerate if needed.",
+  "version": "1.1",
+  "description": "Simple brick designed for LEGO compatibility: eight 4.9 mm diameter studs on an 8 mm grid, an open underside, and three clutch tubes. Body: 31.8 x 15.8 x 9.6 mm; total height with studs: 11.4 mm. Print at 100% scale with the open underside on the bed and studs up, supports off, and 0.12-0.16 mm layers. Use elephant-foot compensation and inspect the first roof bridge in the slicer. Stud diameter increased from 4.8 mm to 4.9 mm after a loose top-stud fit test; underside cavity and clutch tubes retain their tested dimensions. Test one brick first to verify the enlarged top studs. Adjust FIT_ADJUSTMENT in generate.py in 0.025 mm steps (positive for looser, negative for tighter) and regenerate if needed.",
   "files": [
-    { "file": "klemmbaustein-2x4.stl", "name": "2 x 4 brick" }
+    {
+      "file": "klemmbaustein-2x4.stl",
+      "name": "2 x 4 brick"
+    }
   ]
 }

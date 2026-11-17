@@ -1,55 +1,107 @@
 {
   "name": "Meissner wall",
-  "version": "1.1",
-  "description": "Interlocking wall with recessed Meissner lettering across the front: 12 studs wide, 3 bricks high, and 2 studs thick. Assembled body: 95.8 x 15.8 x 28.8 mm (30.6 mm including top studs). Ten separate bricks with staggered joints; uses the tested 2 x 4 brick geometry plus 2 x 2 end bricks. The text recess is 0.6 mm deep, leaving 0.9 mm of front wall.\nPrint meissner-wall.stl once for all ten bricks, or print each individual part once. combined.stl is an assembly preview, not a printable solid. Use 100% scale, studs up, open undersides on the bed, supports off, and 0.12-0.16 mm layers. Disable internal brims; an outer brim is optional if adhesion needs it.\nThe bricks have plain backs with no printed placement labels, for a puzzle-like assembly. On the print plate the bottom row is at the back (+Y), middle row in the center, and top row at the front (-Y), each ordered left to right (+X). Keep every lettered face facing the same way.\nThe base brick was successfully test-printed; the engraved wall and 2 x 2 end bricks still need a physical fit and lettering test.",
+  "version": "1.2",
+  "description": "Three interlocking name walls in one collection, with recessed front lettering and plain, unnumbered backs. All bricks use 4.9 mm studs (increased from 4.8 mm after a loose top-stud fit test); the underside cavity and clutch tubes retain their tested dimensions. The 0.6 mm lettering recess leaves 0.9 mm of front wall.\nMeissner: 12 studs wide, 3 bricks high, 2 studs deep. Ten bricks in staggered rows of 4+4+4, 2+4+4+2, 4+4+4 studs. Body 95.8 x 15.8 x 28.8 mm; 30.6 mm including top studs.\nKäte: 6 studs wide, 2 bricks high, 2 studs deep. Two 2 x 4 and two 2 x 2 bricks in staggered rows of 4+2 and 2+4 studs. Body 47.8 x 15.8 x 19.2 mm; 21 mm including top studs. Both umlaut dots are included.\nCarlo: 8 studs wide, 2 bricks high, 2 studs deep. Five bricks in staggered rows of 4+4 and 2+4+2 studs. Body 63.8 x 15.8 x 19.2 mm; 21 mm including top studs.\nPrint the corresponding meissner-wall.stl, kate-wall.stl or carlo-wall.stl once for a complete set. Files containing combined are assembly previews only. Individual bricks are prefixed by name to keep each set distinct. Use 100% scale, studs up, open undersides on the bed, supports and internal brims off, and 0.12-0.16 mm layers. The print plate preserves each course in its own row, bottom course at the back (+Y), top at the front (-Y), ordered left to right (+X).\nThe original underside grip was physically tested successfully. The enlarged 4.9 mm studs and new lettering sets still need a physical fit test.",
   "files": [
     {
       "file": "combined.stl",
-      "name": "Assembled wall (preview only)"
+      "name": "Meissner - Assembled preview only"
     },
     {
       "file": "meissner-wall.stl",
-      "name": "Print plate - all 10 bricks"
+      "name": "Meissner - Print plate, all 10 bricks"
     },
     {
-      "file": "bottom-1.stl",
-      "name": "Bottom row, position 1"
+      "file": "kate-combined.stl",
+      "name": "Käte - Assembled preview only"
     },
     {
-      "file": "bottom-2.stl",
-      "name": "Bottom row, position 2"
+      "file": "kate-wall.stl",
+      "name": "Käte - Print plate, all 4 bricks"
     },
     {
-      "file": "bottom-3.stl",
-      "name": "Bottom row, position 3"
+      "file": "carlo-combined.stl",
+      "name": "Carlo - Assembled preview only"
     },
     {
-      "file": "middle-1.stl",
-      "name": "Middle row, position 1"
+      "file": "carlo-wall.stl",
+      "name": "Carlo - Print plate, all 5 bricks"
     },
     {
-      "file": "middle-2.stl",
-      "name": "Middle row, position 2"
+      "file": "meissner-bottom-1.stl",
+      "name": "Meissner - bottom brick 1"
     },
     {
-      "file": "middle-3.stl",
-      "name": "Middle row, position 3"
+      "file": "meissner-bottom-2.stl",
+      "name": "Meissner - bottom brick 2"
     },
     {
-      "file": "middle-4.stl",
-      "name": "Middle row, position 4"
+      "file": "meissner-bottom-3.stl",
+      "name": "Meissner - bottom brick 3"
     },
     {
-      "file": "top-1.stl",
-      "name": "Top row, position 1"
+      "file": "meissner-middle-1.stl",
+      "name": "Meissner - middle brick 1"
     },
     {
-      "file": "top-2.stl",
-      "name": "Top row, position 2"
+      "file": "meissner-middle-2.stl",
+      "name": "Meissner - middle brick 2"
     },
     {
-      "file": "top-3.stl",
-      "name": "Top row, position 3"
+      "file": "meissner-middle-3.stl",
+      "name": "Meissner - middle brick 3"
+    },
+    {
+      "file": "meissner-middle-4.stl",
+      "name": "Meissner - middle brick 4"
+    },
+    {
+      "file": "meissner-top-1.stl",
+      "name": "Meissner - top brick 1"
+    },
+    {
+      "file": "meissner-top-2.stl",
+      "name": "Meissner - top brick 2"
+    },
+    {
+      "file": "meissner-top-3.stl",
+      "name": "Meissner - top brick 3"
+    },
+    {
+      "file": "kate-bottom-1.stl",
+      "name": "Käte - bottom brick 1"
+    },
+    {
+      "file": "kate-bottom-2.stl",
+      "name": "Käte - bottom brick 2"
+    },
+    {
+      "file": "kate-top-1.stl",
+      "name": "Käte - top brick 1"
+    },
+    {
+      "file": "kate-top-2.stl",
+      "name": "Käte - top brick 2"
+    },
+    {
+      "file": "carlo-bottom-1.stl",
+      "name": "Carlo - bottom brick 1"
+    },
+    {
+      "file": "carlo-bottom-2.stl",
+      "name": "Carlo - bottom brick 2"
+    },
+    {
+      "file": "carlo-top-1.stl",
+      "name": "Carlo - top brick 1"
+    },
+    {
+      "file": "carlo-top-2.stl",
+      "name": "Carlo - top brick 2"
+    },
+    {
+      "file": "carlo-top-3.stl",
+      "name": "Carlo - top brick 3"
     }
   ]
 }
