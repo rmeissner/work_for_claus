@@ -21,15 +21,17 @@ def test_sampling_preserves_orientation_and_zero_background():
     ) == pytest.approx([0, 1.5, 3, 0])
 
 
-def test_photo_skin_preserves_studs_and_never_cuts_through_front_wall():
-    brick = build_brick()
+@pytest.mark.parametrize("studs_deep", [1, 2])
+def test_photo_skin_preserves_studs_and_never_cuts_through_front_wall(studs_deep):
+    brick = build_brick(studs_y=studs_deep)
     image = np.full((4, 4), -0.45)
     result = photo_front(brick, (0, 0, 0), image, 40, 10, 9.6)
     assert_printable(result)
     assert len(result.decompose()) == 1
     assert result.slice(10.2).area() == pytest.approx(brick.slice(10.2).area())
     # At maximum recess the front surface is still 1.05 mm from the cavity.
-    assert result.bounding_box()[1] == pytest.approx(-7.45)
+    original_front = -(studs_deep * 8 - 0.2) / 2
+    assert result.bounding_box()[1] == pytest.approx(original_front + 0.45)
 
 
 @pytest.mark.parametrize("values", [[[0]], [[-1, 0], [0, 0]], [[0, np.nan], [0, 0]]])

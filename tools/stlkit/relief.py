@@ -78,7 +78,7 @@ def sample_heightmap(values, x, y, width, height):
 def photo_front(
     brick, position, image, image_width, image_height, wall_height, *, spacing=0.35
 ):
-    """Replace only the front skin; keep studs, tubes and other faces intact."""
+    """Replace the front skin; preserve studs, underside supports and other faces."""
     if spacing <= 0 or np.min(image) < -0.45 or np.max(image) > 0.90001:
         raise ValueError(
             "relief must stay within -0.45 to +0.9 mm and use positive spacing"

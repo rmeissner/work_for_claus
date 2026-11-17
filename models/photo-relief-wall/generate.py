@@ -1,4 +1,4 @@
-"""Background-free portrait relief across a 12-stud by 8-course brick wall.
+"""Background-free portrait relief across a 12-stud by 8-course thin brick wall.
 
 Run from the repository root: python models/photo-relief-wall/generate.py
 Print photo-relief-wall.stl; combined.stl is an assembled preview only.
@@ -19,6 +19,7 @@ from stlkit.relief import photo_front
 from stlkit.walls import wall_print_plate
 
 COURSES = ((4, 4, 4), (2, 4, 4, 2)) * 4
+STUDS_DEEP = 1
 GRID_SPACING = 0.35
 ASSET = (
     Path(relief_tools.__file__).resolve().parents[1]
@@ -39,7 +40,7 @@ def parts():
         for index, width in enumerate(columns, start=1):
             position = (cursor + width * PITCH / 2, 0, row * BODY_HEIGHT)
             brick = photo_front(
-                build_brick(width),
+                build_brick(width, studs_y=STUDS_DEEP),
                 position,
                 image,
                 image_width,
