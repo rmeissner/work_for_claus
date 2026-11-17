@@ -1,0 +1,15 @@
+{
+  "name": "Photo relief wall",
+  "version": "1.1",
+  "description": "Background-free grayscale photo relief on a wall 12 studs wide, 8 bricks high, and 1 stud deep. Body 95.8 x 7.8 x 76.8 mm, or 78.6 mm including top studs. Twenty-eight separate interlocking bricks (twenty thin 1 x 4 and eight thin 1 x 2) in alternating rows of 4+4+4 and 2+4+4+2 studs. Plain, unnumbered backs.\nThe supplied portrait was prepared as a grayscale cutout. Darker tones are recessed and lighter tones raised: approximately 0.45 mm below to 0.9 mm above the front plane. Transparent background remains flat. This is a grayscale-driven relief, not reconstructed anatomical depth. Maximum recess leaves at least 1.05 mm of the original 1.5 mm front wall. Uses the tested 5.0 mm top studs and the single-row underside geometry with solid support pins from the thin-brick model. That new underside still needs a physical clutch-fit test.\nPrint photo-relief-wall.stl once for all 28 bricks; combined.stl is preview-only. Split the plate into objects in your slicer to extract individual bricks. Print at 100% scale, studs up, open undersides on the bed, supports and internal brims off, starting with 0.12 mm layers. Matte light-colored filament and light from the side will make the shallow relief easier to see. Inspect the sliced raised features before printing.\nAssemble rows from bottom to top; the print plate keeps each course in its own row with the bottom course at the back (+Y), top at the front (-Y), and parts ordered left to right (+X). Preserve the portrait orientation shown in the preview. Do not scale the STL to make a smaller wall, as that also changes stud fit; regenerate the brick layout instead. Photo-relief detail and print quality still need a physical test.",
+  "files": [
+    {
+      "file": "combined.stl",
+      "name": "Assembled portrait wall (preview only)"
+    },
+    {
+      "file": "photo-relief-wall.stl",
+      "name": "Print plate - all 28 portrait bricks"
+    }
+  ]
+}
