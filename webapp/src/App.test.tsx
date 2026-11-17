@@ -107,6 +107,7 @@ describe('App', () => {
       'Calibration cube',
       'Glider',
       'Klemmbaustein 2 x 4',
+      'Meissner wall',
       'Pyramid',
       'Star Destroyer',
       'Star ornament',
