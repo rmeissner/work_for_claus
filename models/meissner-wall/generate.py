@@ -26,8 +26,8 @@ VARIANTS = (
 ROW_COLORS = ((214, 172, 112), (192, 145, 89), (214, 172, 112))
 
 
-def parts(variant):
-    slug, text, courses, width, height = variant
+def parts(variant, *, keyring=False):
+    _, text, courses, width, height = variant
     rows = ("bottom", "middle", "top") if len(courses) == 3 else ("bottom", "top")
     return wall_parts(
         text,
@@ -37,7 +37,7 @@ def parts(variant):
         text_height=height,
         imprint_depth=IMPRINT_DEPTH,
         fit_adjustment=FIT_ADJUSTMENT,
-        keyring_diameter=KEYRING_HOLE_DIAMETER if slug == "carlo" else None,
+        keyring_diameter=KEYRING_HOLE_DIAMETER if keyring else None,
     )
 
 
@@ -45,24 +45,37 @@ def main() -> None:
     for variant in VARIANTS:
         slug = variant[0]
         bricks = parts(variant)
+        print_bricks = list(bricks)
+        preview_parts = [
+            (part.translate(position), ROW_COLORS[row])
+            for _, part, position, row in bricks
+        ]
+        if slug == "carlo":
+            ring_bricks = parts(variant, keyring=True)
+            ring_corner = next(item for item in ring_bricks if item[0] == "top-1")
+            print_bricks.append(ring_corner)
+            # Show the two complete configurations; shared bricks print only once.
+            wall_width = sum(variant[2][0]) * 8 - 0.2
+            offset = (wall_width + 10) / 2
+            preview_parts = [
+                (part.translate(position).translate((shift, 0, 0)), ROW_COLORS[row])
+                for configuration, shift in ((bricks, -offset), (ring_bricks, offset))
+                for _, part, position, row in configuration
+            ]
         plate = Path(__file__).with_name(f"{slug}-wall.stl")
         preview_name = "combined.stl" if slug == "meissner" else f"{slug}-combined.stl"
         preview = Path(__file__).with_name(preview_name)
         write_stl(
-            wall_print_plate(bricks, gap=PRINT_GAP), plate, f"{slug}-wall-print-plate"
+            wall_print_plate(print_bricks, gap=PRINT_GAP),
+            plate,
+            f"{slug}-wall-print-plate",
         )
         write_colored_stl(
-            [
-                (part.translate(position), ROW_COLORS[row])
-                for _, part, position, row in bricks
-            ],
+            preview_parts,
             preview,
             f"{slug}-wall-assembled-preview",
         )
-        for name, part, _, _ in bricks:
-            filename = f"{slug}-{name}.stl"
-            write_stl(part, Path(__file__).with_name(filename), f"{slug}-{name}")
-        print(f"wrote {plate}, {preview}, and {len(bricks)} individual parts")
+        print(f"wrote {plate} ({len(print_bricks)} separate pieces) and {preview}")
 
 
 if __name__ == "__main__":
