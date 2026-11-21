@@ -10,7 +10,7 @@ Execution mode: web. The assistant opens PRs and the user merges them.
 
 Make a printable, two-player hidden-role board game. Players deploy their pieces
 in secret and battle using rock–paper–scissors to capture the opposing flag.
-Start with clipped cylinders, then add a grid that locates the pieces on their
+Start with upright cylinders, then add a grid that locates the pieces on their
 squares. Try original character sculpts after the prototype has been printed
 and played.
 
@@ -18,15 +18,15 @@ and played.
 
 Use a Python generator built on the repository's `tools/stlkit`. Commit the
 generated STLs and register them in `project.json` so they can be previewed and
-downloaded through the existing catalog. Define a common beveled foot for the
+downloaded through the existing catalog. Define a common circular foot for the
 cylinder pieces so the board and later character pieces can fit the same
 interface. Keep the permanent rules and print instructions in
 `docs/rps-flag-hunt.md` and link them from the repository README.
 
-Make each piece a short cylinder with a flattened edge so it stands upright.
-Recess the rear face and engrave the role into the recess floor. The owner can
-read the mark while the opponent across the board sees the identical blank
-front of each piece. Print with the blank face down and the recess up.
+Stand each cylinder on its circular base for printing and play. Slice away
+part of the rear above the foot to make a flat face, then engrave the role
+on that face. The owner can read the mark while the opponent across the
+board sees the identical blank curved front of each piece.
 
 ### Alternatives Considered
 
@@ -39,7 +39,7 @@ sculpts would add visual and printing constraints before the first playtest.
 Download the board and one complete team plate from the catalog. Print the
 board once and the plate twice, with one color per player. Use the individual
 STLs for replacement pieces and test prints. Sit opposite each other and
-follow the rulebook, keeping each piece's recessed face pointed at its owner.
+follow the rulebook, keeping each piece's engraved face pointed at its owner.
 
 ## Tech Specs
 
@@ -49,24 +49,23 @@ follow the rulebook, keeping each piece's recessed face pointed at its owner.
   including their beveled edges, for a 140 × 120 mm playing area plus any
   outer border. Mark the boundary between each two-row deployment zone and
   the two middle rows.
-- Pieces: start at 18 mm diameter and about 10 mm front-to-back depth. Give
-  each cylinder a flat, beveled foot that fits fully within a square and
-  stands on a flat surface before the board is available. Keep the external
-  dimensions and front geometry identical for all five roles.
-- Fit: set the nominal foot dimensions and bevel in the pieces phase. In
-  the board phase, add matching shallow seats that let pieces settle into
-  place and lift out with one hand. Tune the seat clearance with a small
-  fit print on Claus and check that adjacent pieces can be lifted separately.
-- Recess: start at approximately 3 mm deep and engrave recognizable role
-  symbols into its floor. Size strokes with a 0.4 mm nozzle in mind and keep
-  the role marks fully inside the recess. Use the same filament and print
-  settings for every role on a team. The two teams use distinct colors.
+- Pieces: 50 mm tall and 20 mm in diameter, with a full circular foot for
+  the first 10 mm of height. Above the foot, slice 6 mm in from the rear
+  edge to expose a vertical face. Keep the outer shape and front geometry
+  identical for all five roles.
+- Fit: a 20 mm foot matches the nominal square pitch. In the board phase,
+  prototype shallow locating seats with beveled lead-ins and room for print
+  clearance at adjacent squares. Test the fit on Claus and check that
+  adjacent pieces can be lifted separately.
+- Engraving: cut recognizable symbols into the flat face. Size the marks
+  for a 0.4 mm nozzle. Use the same filament and print settings for every
+  role on a team. The two teams use distinct colors.
 - Exports: one team-plate STL with 14 separated pieces and one standalone
   STL per role, followed by one board STL in the next phase. The board and
   pieces should print without supports at full scale. Start with PLA and
   0.2 mm layers.
 - Validate mesh integrity, plate footprint, separation, and deterministic
-  regeneration. Check the five recesses, blank fronts, flat feet, and board
+  regeneration. Check the five engravings, blank fronts, circular feet, and board
   layout in the previews. Inspect a sliced first layer and the engraving
   layers when a slicer is available. A physical test will verify stability,
   legibility from the owner's seat, and concealment from the opponent's seat.
@@ -110,7 +109,7 @@ Agree on the printable design, proposed rules, and phased rollout in this PR.
 **Depends on:** phase 1. **Can run in parallel:** no.
 
 Add the five cylindrical role pieces and the 14-piece team plate. Define the
-shared foot dimensions and bevel. Register the model, include piece printing
+shared circular foot dimensions. Register the model, include piece printing
 instructions, and update the catalog expectations. Run model lint, format, and
 regeneration checks, and validate the webapp catalog and build.
 
@@ -129,8 +128,8 @@ catalog checks and verify that pieces fit and lift out of neighboring seats.
 **Can run in parallel:** no.
 
 Develop original anime-inspired or similarly playful character pieces with
-the same beveled foot. Use a common opponent-facing design across the five roles
-within a team. Keep role markings recessed and owner-facing and preserve
+the same circular foot. Use a common opponent-facing design across the five roles
+within a team. Keep role markings engraved and owner-facing and preserve
 role counts, stable placement, and printability. Keep the cylinder set
 available for printing. Choose the character theme after prototype feedback.
 

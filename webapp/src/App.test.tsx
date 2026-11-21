@@ -109,6 +109,7 @@ describe('App', () => {
       'Klemmbaustein 2 x 4',
       'Meissner wall',
       'Pyramid',
+      'RPS Flag Hunt',
       'Star Destroyer',
       'Star ornament',
     ])
