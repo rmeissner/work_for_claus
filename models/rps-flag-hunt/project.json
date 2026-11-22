@@ -1,14 +1,17 @@
 {
   "name": "RPS Flag Hunt",
-  "version": "0.9",
-  "description": "Print the 7 × 6 board once and choose two teams in distinct colors. Each cylinder plate makes one 14-piece team. Each ninja plate makes one team from 14 bodies and 14 keyed heads. Test-fit a body and head before printing the ninja team. Print the board seats up, and print the pieces upright. Use PLA at 100% scale with a 0.4 mm nozzle, 0.2 mm layers, and supports off. The 2 × 2 test board checks seat fit and underside engraving. Stand each piece with its rear role symbol facing its owner.",
+  "version": "0.11",
+  "description": "Print the 7 × 6 board once and choose two teams in distinct colors. Each cylinder plate makes one 14-piece team. Each ninja plate makes one team from 14 bodies and 14 keyed heads. Choose the spiky-haired or swept-haired design and test-fit a body and head before printing the team. Print the board seats up and the pieces upright. Use PLA at 100% scale with a 0.4 mm nozzle, 0.2 mm layers, and supports off. The 2 × 2 test board checks seat fit and underside engraving. Stand each piece with its rear role symbol facing its owner.",
   "files": [
     { "file": "board.stl", "name": "Board (7 × 6)" },
     { "file": "team-plate.stl", "name": "Cylinder team plate (14 pieces)" },
     { "file": "ninja-team-plate.stl", "name": "Ninja team plate (28 parts)" },
+    { "file": "rival-ninja-team-plate.stl", "name": "Rival ninja team plate (28 parts)" },
     { "file": "test-board-2x2.stl", "name": "Fit and engraving test board (2 × 2)" },
     { "file": "ninja-assembled.stl", "name": "Assembled ninja (preview)" },
+    { "file": "rival-ninja-assembled.stl", "name": "Assembled rival ninja (preview)" },
     { "file": "ninja-body.stl", "name": "Ninja body" },
+    { "file": "rival-ninja-body.stl", "name": "Rival ninja body" },
     { "file": "rock.stl", "name": "Cylinder rock" },
     { "file": "paper.stl", "name": "Cylinder paper" },
     { "file": "scissors.stl", "name": "Cylinder scissors" },
@@ -18,6 +21,11 @@
     { "file": "ninja-head-paper.stl", "name": "Ninja paper head" },
     { "file": "ninja-head-scissors.stl", "name": "Ninja scissors head" },
     { "file": "ninja-head-bomb.stl", "name": "Ninja bomb head" },
-    { "file": "ninja-head-flag.stl", "name": "Ninja flag head" }
+    { "file": "ninja-head-flag.stl", "name": "Ninja flag head" },
+    { "file": "rival-ninja-head-rock.stl", "name": "Rival ninja rock head" },
+    { "file": "rival-ninja-head-paper.stl", "name": "Rival ninja paper head" },
+    { "file": "rival-ninja-head-scissors.stl", "name": "Rival ninja scissors head" },
+    { "file": "rival-ninja-head-bomb.stl", "name": "Rival ninja bomb head" },
+    { "file": "rival-ninja-head-flag.stl", "name": "Rival ninja flag head" }
   ]
 }
