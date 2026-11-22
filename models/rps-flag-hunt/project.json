@@ -1,9 +1,11 @@
 {
   "name": "RPS Flag Hunt",
-  "version": "0.2",
-  "description": "Print the team plate twice in two distinct colors. Each plate has four Rocks, four Papers, four Scissors, one Bomb, and one Flag. Use PLA at 100% scale with a 0.4 mm nozzle and 0.2 mm layers. Print upright on the circular bases with supports off. Each cylinder is 50 mm tall and 20 mm in diameter. The flat engraved side starts 10 mm above the base, leaving a full circular foot. Point each engraved side toward its owner during play.",
+  "version": "0.6",
+  "description": "Print the board once and the 14-piece team plate twice in distinct colors. Use PLA at 100% scale with a 0.4 mm nozzle, 0.2 mm layers, and supports off. Print the board with its seats up and the cylinders upright on their circular bases. Use the 2 × 2 test board to check the fit first. The full board is 148 × 128 mm with seven columns and six rows at 20 mm pitch. Rim notches mark the two setup rows on each end. Stand each piece in a seat with its engraved side facing its owner.",
   "files": [
+    { "file": "board.stl", "name": "Board (7 × 6)" },
     { "file": "team-plate.stl", "name": "Team plate (14 pieces)" },
+    { "file": "test-board-2x2.stl", "name": "Fit and engraving test board (2 × 2)" },
     { "file": "rock.stl", "name": "Rock" },
     { "file": "paper.stl", "name": "Paper" },
     { "file": "scissors.stl", "name": "Scissors" },
