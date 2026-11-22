@@ -25,7 +25,7 @@ from stlkit.rps import FOOT_DIAMETER, TEAM_COUNTS, role_marks
 BOARD_COLUMNS = 7
 BOARD_ROWS = 6
 DEPLOYMENT_ROWS = 2
-CELL_PITCH = 20.0
+CELL_PITCH = 23.0
 BOARD_BORDER = 4.0
 BOARD_HEIGHT = 3.2
 BOARD_WALL_FRACTION = 0.30
@@ -33,6 +33,8 @@ SEAT_DEPTH = 0.8
 SEAT_CLEARANCE = 0.2  # Radial clearance around the 20 mm foot.
 SEAT_BEVEL = 0.4
 MARKER_WIDTH = 1.4
+SKIN_THICKNESS = 1.2  # Solid layer below the seat floors.
+RIB_WIDTH = 1.2  # Underside ribs, centred on the cell boundaries.
 
 CHIN_LIFT = 2.0
 HEAD_SEAT_Z = 23.2
@@ -97,8 +99,8 @@ def build_board(
     seat = bevel + Manifold.cylinder(
         SEAT_DEPTH - SEAT_BEVEL, radius, circular_segments=96
     ).translate((0, 0, seat_floor))
-    # Adjacent seats meet along short arcs. The material at the cell corners
-    # locates the feet while leaving clearance at the 20 mm pitch.
+    # The 23 mm pitch leaves a 3 mm gap between the 20 mm feet, and the seats
+    # stay separate with material between them.
     cutters = [
         seat.translate(
             (
@@ -110,6 +112,24 @@ def build_board(
         for row in range(rows)
         for column in range(columns)
     ]
+    # Open one rectangular pocket per cell into the underside, up to the skin.
+    # The ribs between them follow the cell boundaries, and the border stays solid.
+    pocket_height = seat_floor - SKIN_THICKNESS
+    pocket = Manifold.cube(
+        (CELL_PITCH - RIB_WIDTH, CELL_PITCH - RIB_WIDTH, pocket_height + overcut),
+        center=True,
+    ).translate((0, 0, pocket_height / 2 - overcut / 2))
+    cutters.extend(
+        pocket.translate(
+            (
+                (column + 0.5) * CELL_PITCH - field_width / 2,
+                (row + 0.5) * CELL_PITCH - field_depth / 2,
+                0,
+            )
+        )
+        for row in range(rows)
+        for column in range(columns)
+    )
     # Rim notches mark the two row boundaries without cutting into the seats.
     if deployment_rows:
         boundary = field_depth / 2 - deployment_rows * CELL_PITCH

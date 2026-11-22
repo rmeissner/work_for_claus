@@ -149,9 +149,29 @@ keyed neck joint, 20 mm foot, and rear role marks. Add one team plate and an
 assembled preview in the same catalog project, plus a board preview that
 stands both teams in their setup rows.
 
+### Phase 4c — Iterate after the first test print
+
+**Depends on:** phase 4b in the PR stack.
+**Can run in parallel:** no.
+
+Collect the fixes found while test-printing. First, widen the board pitch from
+20 mm to 23 mm so the 20 mm feet no longer touch and lifting one piece leaves
+its neighbours in place. Hollow the board underside into a rib grid to save
+filament. Further print fixes are added to this phase as they
+come up.
+
+### Phase 4d — Game box
+
+**Depends on:** phase 4c in the PR stack.
+**Can run in parallel:** no.
+
+Add a printable box that stores the board and both teams. Discuss the size,
+the layout, the lid, and how the parts are held with the user at the start of
+this phase, before modelling.
+
 ### Phase 5 — Remove the plan
 
-**Depends on:** phase 4b. **Can run in parallel:** no.
+**Depends on:** phase 4d. **Can run in parallel:** no.
 
 Verify the printable sets, catalog downloads, and permanent rulebook, then
 remove this epic specification.

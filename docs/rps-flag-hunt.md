@@ -6,7 +6,9 @@ Capture the opposing Flag to win.
 ## Print the game
 
 - Print one [board](../models/rps-flag-hunt/board.stl) flat, with the seats
-  facing up. The full board measures 148 × 128 × 3.2 mm.
+  facing up. The full board measures 169 × 146 × 3.2 mm.
+- The board's underside is a rib grid that saves filament; it prints seats up
+  without supports.
 - Print one team plate per player, each in that player's color. Choose the
   [spiky-haired ninja team](../models/rps-flag-hunt/ninja-team-plate.stl) or the
   [swept-haired rival team](../models/rps-flag-hunt/rival-ninja-team-plate.stl).
@@ -14,7 +16,8 @@ Capture the opposing Flag to win.
   their circular feet; the two teams can play against each other or two sets
   of the same design.
 - Start with PLA, a 0.4 mm nozzle, and 0.2 mm layers. Print at 100% scale with
-  supports off. Every figure has a 20 mm circular foot.
+  supports off. Every figure has a 20 mm circular foot, and the board seats are 23 mm
+  apart, leaving a 3 mm gap between neighboring feet.
 - The [board preview](../models/rps-flag-hunt/board-assembled.stl) shows both
   teams standing in their setup rows. The assembled
   [ninja](../models/rps-flag-hunt/ninja-assembled.stl) and
@@ -31,9 +34,9 @@ the plate in your slicer and print only those.
    the same nominal dimensions. If the fit is tight, check the socket opening
    for first-layer flare and adjust your slicer's elephant-foot compensation.
 2. Check that the assembled figure fits a seat and that you can read the rear
-   symbol from your side. The 20 mm feet touch at nominal size when centered
-   in neighboring seats, so check that two figures can sit next to each other
-   and lift out separately.
+   symbol from your side. Neighboring seats are 23 mm apart, so the 20 mm
+   feet have a 3 mm gap. Check that two figures can sit next to each other and
+   lift out separately.
 3. Fill a seven-piece row on the board before printing the second team. Remove
    any brim from the feet and tune your slicer's XY or elephant-foot
    compensation if the fit is tight.
