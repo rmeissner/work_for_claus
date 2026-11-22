@@ -7,8 +7,8 @@ Capture the opposing Flag to win.
 
 - Print one [board](../models/rps-flag-hunt/board.stl) flat, with the seats
   facing up. The full board measures 148 × 128 × 3.2 mm.
-- Print the [14-piece team plate](../models/rps-flag-hunt/team-plate.stl) once
-  per player in a distinct color. Print the pieces upright on their circular
+- For each cylinder team, print the [14-piece team plate](../models/rps-flag-hunt/team-plate.stl)
+  once in that player's color. Print the pieces upright on their circular
   feet. [Individual STLs](../models/rps-flag-hunt/) are available for test prints
   and replacements.
 - Start with PLA, a 0.4 mm nozzle, and 0.2 mm layers. Print at 100% scale with
@@ -23,6 +23,24 @@ in neighboring seats. Check that two printed pieces can sit next to each
 other and lift out separately, then try filling a seven-piece row on the
 full board before printing the second team. Remove any brim from the feet
 and tune your slicer's XY or elephant-foot compensation if the fit is tight.
+
+### Chibi ninja team
+
+The chibi ninja team fits the same board. Use it for one side and a
+cylinder team in a different color for the other.
+
+1. Test-print one [body](../models/rps-flag-hunt/ninja-body.stl) and
+   [head](../models/rps-flag-hunt/ninja-head-rock.stl) in their exported
+   upright orientation with the same settings as the cylinders.
+2. Slide the head straight onto the keyed neck peg. The peg and socket have
+   the same nominal dimensions. If you have a body from an earlier print,
+   use it to test the new head. If the fit is tight, check the socket opening
+   for first-layer flare and adjust your slicer's elephant-foot compensation.
+   Check that the assembled piece fits the board and that you can read the
+   rear symbol from your side.
+3. Print the [ninja team plate](../models/rps-flag-hunt/ninja-team-plate.stl)
+   for 14 bodies and 14 matching heads. The team includes four Rock, four
+   Paper, four Scissors, one Bomb, and one Flag head.
 
 ## Set up
 
