@@ -3,9 +3,11 @@
 Print and play with the circular base at Z = 0. The engraved side faces -Y.
 """
 
+import math
 import sys
 from itertools import pairwise
 from pathlib import Path
+from typing import NamedTuple
 
 import numpy as np
 from manifold3d import CrossSection, Manifold, OpType
@@ -14,6 +16,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "tools"))
 
 from stlkit import (
     assert_printable,
+    assert_supported,
     bar,
     extrude,
     layout_on_plate,
@@ -35,6 +38,52 @@ SEAT_BEVEL = 0.4
 MARKER_WIDTH = 1.4
 SKIN_THICKNESS = 1.2  # Solid layer below the seat floors.
 RIB_WIDTH = 1.2  # Underside ribs, centred on the cell boundaries.
+FOOT_HEIGHT = 2.4
+FOOT_TOP_RADIUS = 9.5
+
+# The game box: the figures lie in two bars, and the box board is its lid.
+BOX_FLOOR = 1.2
+BOX_WALL = 2.0
+LID_FIT = 0.35  # Clearance between the sliding lid and the rails and the stop.
+RAIL_WALL = 1.0  # The box is 2 * (0.35 + 1.0) mm wider than its board.
+RAIL_LIP = 1.2  # Thickness of the lip tips.
+RAIL_OVERLAP = BOARD_HEIGHT * (1 - BOARD_WALL_FRACTION)  # The lips cover the bevel.
+RAIL_END_RADIUS = 3.5  # Plan-view nose of the rails at the open end.
+BOX_CORNER = 8.0  # Radius of the box's outer vertical corners.
+LID_CORNER = BOX_CORNER - LID_FIT - RAIL_WALL  # The lid's, so the gap stays even.
+TOP_CHAMFER = 1.2  # On the outer top edge of the walls and the rails.
+BASE_CHAMFER = 1.0  # On the outer bottom edge: 45°, so it prints without supports.
+GRIP_RADIUS = 5.0  # Finger scoops in both short borders of the lid.
+GRIP_DEPTH = 1.2
+# The lip underside rises at 45° from the rail wall, 0.35 mm off the lid's bevel.
+RAIL_ROOT = BOARD_HEIGHT * BOARD_WALL_FRACTION + LID_FIT * (2**0.5 - 1)
+RAIL_TOP = RAIL_ROOT + LID_FIT + RAIL_OVERLAP + RAIL_LIP  # Above the wall tops.
+LID_DETENT = 0.65  # A ridge the lid rides over; the lips allow only 0.5 mm of lift.
+RIDGE_LENGTH = 60.0
+RIDGE_INNER_ANGLE = 60.0  # Degrees from horizontal; the outer ramp is shallower.
+RIDGE_TOP = 0.1
+RIDGE_MAX_SLOPE = 65.0  # No face of the ridge may be steeper than this.
+SHELF_INSET = 3.8  # The wall top reaches this far under the lid's solid border.
+BAR_PITCH = 22.0
+SLOT_CLEARANCE = 0.3
+SLOT_RADIUS = FOOT_DIAMETER / 2 + SLOT_CLEARANCE
+BAR_BACK = 1.6  # The wall between the slots on the two faces.
+POCKET_DEPTH = FOOT_HEIGHT + SLOT_CLEARANCE
+LIP = 1.2  # In front of the foot, either side of the opening.
+BAR_HALF = BAR_BACK / 2 + POCKET_DEPTH + LIP
+FOOT_OFFSET = BAR_BACK / 2 + SLOT_CLEARANCE / 2  # From the bar's center to the foot.
+SLIT_HALF = 7.5  # Half the opening, wider than the legs, narrower than the foot.
+SLIT_FLOOR = 8.0  # The opening ends this far below the foot's center.
+POCKET_FLOOR = 1.2  # Solid below the grooves.
+DETENT_DEPTH = 0.5
+DISC_Z = BOX_FLOOR + POCKET_FLOOR + FOOT_DIAMETER / 2  # Foot center when seated.
+BAR_TOP = DISC_Z + FOOT_DIAMETER / 2 + 1.5
+LID_Z = BAR_TOP + 0.4  # The lid board's underside.
+FIGURE_ROLL = 270  # Degrees about the figure's axis: the rear role symbol faces up.
+BAR_MIDDLE_GAP = 4.0  # Between the heads of figures that face each other.
+BAR_END_GAP = 1.0  # Between the heads and the wall-top shelf, so figures drop past it.
+BAR_SIDE_GAP = 1.8  # The same for the figures at the ends of each bar.
+TOUCH_VOLUME = 0.01  # mm³ of overlap that still counts as touching.
 
 CHIN_LIFT = 2.0
 HEAD_SEAT_Z = 23.2
@@ -66,29 +115,72 @@ ROUNDED_PROFILE = CrossSection(
 NECK_KEY = CrossSection([[(-2.2, -1.8), (2.2, -1.8), (1.5, 1.8), (-1.5, 1.8)]])
 
 
+def along_x(shape: CrossSection, start: float, end: float) -> Manifold:
+    """Extrude a section given as (y, z) along X from ``start`` to ``end``."""
+    return extrude(shape, end - start).rotate((90, 0, 90)).translate((start, 0, 0))
+
+
+def rounded_block(
+    corner_x: float,
+    corner_y: float,
+    height: float,
+    bottom_radius: float,
+    top_radius: float | None = None,
+) -> Manifold:
+    """A prism or frustum with rounded corners around centers at (±corner_x, ±corner_y)."""
+    corner = Manifold.cylinder(
+        height, bottom_radius, bottom_radius if top_radius is None else top_radius, 64
+    )
+    return Manifold.batch_hull(
+        [
+            corner.translate((sx * corner_x, sy * corner_y, 0))
+            for sx in (-1, 1)
+            for sy in (-1, 1)
+        ]
+    )
+
+
 def build_board(
     columns: int = BOARD_COLUMNS,
     rows: int = BOARD_ROWS,
     *,
     deployment_rows: int = DEPLOYMENT_ROWS,
+    pitch: float = CELL_PITCH,
+    size: tuple[float, float] | None = None,
+    corner_radius: float | None = None,
 ) -> Manifold:
-    field_width = columns * CELL_PITCH
-    field_depth = rows * CELL_PITCH
-    width = field_width + 2 * BOARD_BORDER
-    depth = field_depth + 2 * BOARD_BORDER
-    outline = CrossSection.square((width, depth), center=True)
+    """The board; ``size`` widens its border, ``corner_radius`` rounds it and adds grips."""
+    field_width = columns * pitch
+    field_depth = rows * pitch
+    width, depth = size or (
+        field_width + 2 * BOARD_BORDER,
+        field_depth + 2 * BOARD_BORDER,
+    )
     wall_height = BOARD_HEIGHT * BOARD_WALL_FRACTION
     bevel_height = BOARD_HEIGHT - wall_height
-    # A 45° bevel steps in horizontally by its height on each side.
-    rim = Manifold.extrude(
-        outline,
-        bevel_height,
-        scale_top=(
-            (width - 2 * bevel_height) / width,
-            (depth - 2 * bevel_height) / depth,
-        ),
-    ).translate((0, 0, wall_height))
-    base = extrude(outline, wall_height) + rim
+    if corner_radius is None:
+        outline = CrossSection.square((width, depth), center=True)
+        # A 45° bevel steps in horizontally by its height on each side.
+        rim = Manifold.extrude(
+            outline,
+            bevel_height,
+            scale_top=(
+                (width - 2 * bevel_height) / width,
+                (depth - 2 * bevel_height) / depth,
+            ),
+        ).translate((0, 0, wall_height))
+        base = extrude(outline, wall_height) + rim
+    else:
+        # The same bevel, carried around the corners by cones.
+        corner_x, corner_y = width / 2 - corner_radius, depth / 2 - corner_radius
+        rim = rounded_block(
+            corner_x,
+            corner_y,
+            bevel_height,
+            corner_radius,
+            corner_radius - bevel_height,
+        ).translate((0, 0, wall_height))
+        base = rounded_block(corner_x, corner_y, wall_height, corner_radius) + rim
 
     radius = FOOT_DIAMETER / 2 + SEAT_CLEARANCE
     overcut = 0.1  # Extend the cutters past the top face.
@@ -104,8 +196,8 @@ def build_board(
     cutters = [
         seat.translate(
             (
-                (column + 0.5) * CELL_PITCH - field_width / 2,
-                (row + 0.5) * CELL_PITCH - field_depth / 2,
+                (column + 0.5) * pitch - field_width / 2,
+                (row + 0.5) * pitch - field_depth / 2,
                 0,
             )
         )
@@ -116,14 +208,14 @@ def build_board(
     # The ribs between them follow the cell boundaries, and the border stays solid.
     pocket_height = seat_floor - SKIN_THICKNESS
     pocket = Manifold.cube(
-        (CELL_PITCH - RIB_WIDTH, CELL_PITCH - RIB_WIDTH, pocket_height + overcut),
+        (pitch - RIB_WIDTH, pitch - RIB_WIDTH, pocket_height + overcut),
         center=True,
     ).translate((0, 0, pocket_height / 2 - overcut / 2))
     cutters.extend(
         pocket.translate(
             (
-                (column + 0.5) * CELL_PITCH - field_width / 2,
-                (row + 0.5) * CELL_PITCH - field_depth / 2,
+                (column + 0.5) * pitch - field_width / 2,
+                (row + 0.5) * pitch - field_depth / 2,
                 0,
             )
         )
@@ -132,7 +224,7 @@ def build_board(
     )
     # Rim notches mark the two row boundaries without cutting into the seats.
     if deployment_rows:
-        boundary = field_depth / 2 - deployment_rows * CELL_PITCH
+        boundary = field_depth / 2 - deployment_rows * pitch
         left_edge = -width / 2 - overcut
         right_edge = field_width / 2 + SEAT_CLEARANCE + SEAT_BEVEL + 0.4
         notch = Manifold.cube(
@@ -143,6 +235,17 @@ def build_board(
             for x in (left_edge, right_edge)
             for y in (-boundary, boundary)
         )
+    if corner_radius is not None:
+        # A shallow scoop at each short edge lets a finger start the lid sliding.
+        scoop = Manifold.cylinder(
+            GRIP_DEPTH + overcut, GRIP_RADIUS, circular_segments=48
+        )
+        for sign in (-1, 1):
+            cutters.append(
+                scoop.translate(
+                    (sign * (width / 2 - 1.5), 0, BOARD_HEIGHT - GRIP_DEPTH)
+                )
+            )
     return Manifold.batch_boolean([base, *cutters], OpType.Subtract)
 
 
@@ -249,7 +352,7 @@ def forehead_plate() -> Manifold:
 
 
 def body() -> Manifold:
-    pedestal = Manifold.cylinder(2.4, FOOT_DIAMETER / 2, 9.5, 96)
+    pedestal = Manifold.cylinder(FOOT_HEIGHT, FOOT_DIAMETER / 2, FOOT_TOP_RADIUS, 96)
     boot = loft(
         ROUNDED_PROFILE,
         [(2.3, 2.6, 3.65), (3.4, 2.6, 3.65), (5.4, 2.25, 2.7)],
@@ -509,7 +612,7 @@ def rival_legs() -> Manifold:
 
 
 def rival_body() -> Manifold:
-    pedestal = Manifold.cylinder(2.4, FOOT_DIAMETER / 2, 9.5, 96)
+    pedestal = Manifold.cylinder(FOOT_HEIGHT, FOOT_DIAMETER / 2, FOOT_TOP_RADIUS, 96)
     leg = rival_legs()
     skirt = rival_skirt()
     # An egg-shaped torso with narrow, sloping shoulders.
@@ -820,6 +923,532 @@ def write_board_preview(
     )
 
 
+class Slot(NamedTuple):
+    team: int  # 0 for the ninja team, 1 for the rival team.
+    seat: int  # Index into ``team_roles()``.
+    bar: float  # X of the bar's center line.
+    along: float  # Y of the foot's center.
+    facing: int  # +1 or -1: the direction the head points along X.
+
+
+class BoxLayout(NamedTuple):
+    # X, slotted faces and Y shift of the slots of each bar.
+    bars: tuple[tuple[float, tuple[int, ...], float], ...]
+    columns: int  # Slots along each bar face.
+    half_y: float  # Half the inner length of the bars.
+    board_size: tuple[float, float]  # The box board, which is the sliding lid.
+    pitch: float  # Seat pitch of the box board.
+    grid: tuple[int, int]  # Columns and rows of the box board.
+    deployment_rows: int
+    slots: tuple[Slot, ...]
+
+
+def box_layout(figure_length: float) -> BoxLayout:
+    """Size the box around two bars of lying figures, and the board around the box.
+
+    The two bars stand in X, each with figures heading away on both faces. The
+    figures on the inner faces nearly meet in the middle.
+    """
+    bar_x = FOOT_OFFSET + figure_length + BAR_MIDDLE_GAP / 2
+    inset = (
+        BOX_WALL - LID_FIT - RAIL_WALL
+    )  # The inner wall is inside the board outline.
+    shelf = SHELF_INSET - inset  # How far the wall-top shelf reaches in.
+    half_x = bar_x + FOOT_OFFSET + figure_length + shelf + BAR_END_GAP
+    half_y = BOARD_COLUMNS * BAR_PITCH / 2 + BAR_SIDE_GAP
+    size = (2 * (half_x + inset), 2 * (half_y + inset))
+    pitch = min(
+        (size[0] - 2 * BOARD_BORDER) / BOARD_COLUMNS,
+        (size[1] - 2 * BOARD_BORDER) / BOARD_ROWS,
+    )
+    slots = []
+    for team, side in enumerate((-1, 1)):
+        for seat in range(2 * BOARD_COLUMNS):
+            row, column = divmod(seat, BOARD_COLUMNS)
+            # Row 0 heads away from the box's middle, row 1 toward it.
+            facing = side if row == 0 else -side
+            along = (column - BOARD_COLUMNS // 2) * BAR_PITCH
+            slots.append(Slot(team, seat, side * bar_x, along, facing))
+    return BoxLayout(
+        ((-bar_x, (1, -1), 0.0), (bar_x, (1, -1), 0.0)),
+        BOARD_COLUMNS,
+        half_y,
+        size,
+        math.floor(pitch * 2) / 2,
+        (BOARD_COLUMNS, BOARD_ROWS),
+        DEPLOYMENT_ROWS,
+        tuple(slots),
+    )
+
+
+def small_layout(full: BoxLayout, figure_length: float) -> BoxLayout:
+    """A small 3-by-3 box with the full box's borders, pitch, walls and fit.
+
+    Two bars near the ends hold three figures each, one face slotted, heads
+    pointing at each other. The slots are half a pitch apart, so the heads
+    pass between each other's.
+    """
+    columns = 3
+    pitch = full.pitch
+    size = (
+        full.board_size[0] - (full.grid[0] - columns) * pitch,
+        full.board_size[1] - (full.grid[1] - columns) * pitch,
+    )
+    inset = BOX_WALL - LID_FIT - RAIL_WALL
+    # Each bar's grooves start just inside the wall-top shelf, so figures drop in.
+    bar = size[0] / 2 - SHELF_INSET - 0.2 + BAR_BACK / 2
+    shift = BAR_PITCH / 4
+    slots = []
+    for side, mix in ((-1, ((0, 0), (1, 3), (0, 8))), (1, ((1, 0), (0, 3), (1, 8)))):
+        for column, (team, seat) in enumerate(mix):
+            along = (column - columns // 2) * BAR_PITCH + side * shift
+            slots.append(Slot(team, seat, side * bar, along, -side))
+    return BoxLayout(
+        ((-bar, (1,), -shift), (bar, (-1,), shift)),
+        columns,
+        size[1] / 2 - inset,
+        size,
+        pitch,
+        (columns, columns),
+        1,
+        tuple(slots),
+    )
+
+
+def small_variants(layout: BoxLayout) -> list[BoxLayout]:
+    """The same slots with only ninja figures and with only rival figures."""
+    return [
+        layout._replace(slots=tuple(slot._replace(team=team) for slot in layout.slots))
+        for team in (0, 1)
+    ]
+
+
+def bar_slots() -> Manifold:
+    """The slots of one bar face, cut from its center line toward +X.
+
+    Each is a groove open at the top, wide enough for a foot standing on its
+    edge, behind a narrower opening that the figure's legs pass through.
+    """
+    top = BAR_TOP + 1.0
+    arc = DISC_Z - FOOT_DIAMETER / 2 + SLOT_RADIUS  # Center of the rounded bottom.
+    radius = SLOT_RADIUS
+    wedge = CrossSection(
+        [
+            [
+                (radius + 0.1, arc + 4.5),
+                (radius - DETENT_DEPTH, arc + 3.0),
+                (radius + 0.1, arc + 1.5),
+            ]
+        ]
+    )
+    groove = CrossSection.circle(radius, 96).translate((0, arc))
+    groove += CrossSection.square((2 * radius, top - arc)).translate((-radius, arc))
+    # A narrowing the foot squeezes past while it drops into the groove.
+    groove -= wedge + wedge.mirror((1, 0))
+    pocket_end = BAR_BACK / 2 + POCKET_DEPTH
+    opening = CrossSection.square(
+        (2 * SLIT_HALF, top - (DISC_Z - SLIT_FLOOR))
+    ).translate((-SLIT_HALF, DISC_Z - SLIT_FLOOR))
+    slots = [
+        along_x(groove, BAR_BACK / 2, pocket_end),
+        along_x(opening, pocket_end - 0.1, BAR_HALF + 0.1),
+    ]
+    return Manifold.batch_boolean(slots, OpType.Add)
+
+
+def chamfered_block(
+    corner_x: float,
+    corner_y: float,
+    radius: float,
+    z0: float,
+    z1: float,
+    *,
+    bottom: float = 0.0,
+    top: float = 0.0,
+) -> Manifold:
+    """A rounded-corner block from ``z0`` to ``z1`` with 45° chamfers on its ends."""
+    pieces = []
+    if bottom:
+        pieces.append(
+            Manifold.cylinder(bottom, radius - bottom, radius, 64).translate((0, 0, z0))
+        )
+    pieces.append(
+        Manifold.cylinder(
+            z1 - top - z0 - bottom, radius, circular_segments=64
+        ).translate((0, 0, z0 + bottom))
+    )
+    if top:
+        pieces.append(
+            Manifold.cylinder(top, radius, radius - top, 64).translate((0, 0, z1 - top))
+        )
+    return Manifold.batch_hull(
+        [
+            piece.translate((sx * corner_x, sy * corner_y, 0))
+            for sx in (-1, 1)
+            for sy in (-1, 1)
+            for piece in pieces
+        ]
+    )
+
+
+def rim_envelope(half_width: float, half_depth: float) -> Manifold:
+    """The rounded, top-chamfered outline that the rails and the stop are cut to."""
+    return chamfered_block(
+        half_width - LID_CORNER,
+        half_depth - LID_CORNER,
+        BOX_CORNER,
+        LID_Z - TOP_CHAMFER,
+        LID_Z + RAIL_TOP,
+        top=TOP_CHAMFER,
+    )
+
+
+def box_shell(half_width: float, half_depth: float) -> Manifold:
+    """The solid outer shell: rounded corners, chamfered at the bottom and the top."""
+    return chamfered_block(
+        half_width - LID_CORNER,
+        half_depth - LID_CORNER,
+        BOX_CORNER,
+        0.0,
+        LID_Z,
+        bottom=BASE_CHAMFER,
+        top=TOP_CHAMFER,
+    )
+
+
+def lid_rails(half_width: float, half_depth: float) -> Manifold:
+    """Dovetail rails along the long walls, closed around the stop end.
+
+    Each lip grows out of its rail wall at 45° and runs parallel to the lid's
+    bevel, ``LID_FIT`` away from it, then carries on at 45° over the border.
+    At the closed +X end the rail follows the rounded corners and runs across
+    the end, so the grooves end inside a solid corner. At the open end the
+    rails end in rounded noses that also lead the lid in.
+    """
+    top = RAIL_TOP
+    outer = LID_FIT + RAIL_WALL
+    # The rim reaches down into the box's chamfered top edge to join it.
+    low = -TOP_CHAMFER
+    tip = RAIL_ROOT + LID_FIT + RAIL_OVERLAP
+    profile = [
+        (LID_FIT, low),
+        (outer, low),
+        (outer, top),
+        (-RAIL_OVERLAP, top),
+        (-RAIL_OVERLAP, tip),
+        (LID_FIT, RAIL_ROOT),
+    ]
+
+    def section(offset: float) -> CrossSection:
+        return CrossSection([[(offset + y, LID_Z + z) for y, z in profile]])
+
+    corner_x, corner_y = half_width - LID_CORNER, half_depth - LID_CORNER
+    reach = half_width + outer
+    near, far = half_depth - RAIL_OVERLAP, half_depth + outer + 1.0
+    nose = Manifold.batch_hull(
+        [
+            Manifold.cylinder(
+                top - low + 1.0, RAIL_END_RADIUS, circular_segments=48
+            ).translate((-reach + RAIL_END_RADIUS, y, LID_Z + low))
+            for y in (near + RAIL_END_RADIUS, far - RAIL_END_RADIUS)
+        ]
+        + [
+            Manifold.cube((1.0, far - near, top - low + 1.0)).translate(
+                (corner_x, near, LID_Z + low)
+            )
+        ]
+    )
+    side = along_x(section(half_depth), -reach, corner_x) ^ nose
+    # The profile turns the corner about the lid's corner center.
+    corner = Manifold.revolve(section(LID_CORNER), 64, 90).translate(
+        (corner_x, corner_y, 0)
+    )
+    end = (
+        extrude(section(half_width), 2 * corner_y)
+        .rotate((90, 0, 0))
+        .translate((0, corner_y, 0))
+    )
+    rim = side + corner + end
+    rim += rim.mirror((0, 1, 0))
+    return rim ^ rim_envelope(half_width, half_depth)
+
+
+def lid_detent(half_width: float, half_depth: float) -> Manifold:
+    """A ridge across the open end wall that holds the closed lid.
+
+    It rises from the wall top, and its outer face is a ramp from the wall's
+    outer edge, at about 37°, so the lid's trailing edge rides up onto it as
+    the lid closes. Its inner face is steeper, ``RIDGE_INNER_ANGLE``, and starts
+    at the lid's end face, so the closed lid is held firmer than it closed. The
+    outer wall face stays vertical under it, and the ridge's ends taper at 45°
+    into the wall's chamfered top edge.
+    """
+    outer = LID_FIT + RAIL_WALL
+    low = -TOP_CHAMFER  # Down into the chamfered top edge, which it replaces.
+    far, foot = -(half_width + outer), -half_width
+    inner_top = foot - LID_DETENT / math.tan(math.radians(RIDGE_INNER_ANGLE))
+    profile = CrossSection(
+        [
+            [
+                (far, low),
+                (foot, low),
+                (foot, 0.0),
+                (inner_top, LID_DETENT),
+                (inner_top - RIDGE_TOP, LID_DETENT),
+                (far, 0.0),
+            ]
+        ]
+    )
+
+    def prism(length: float) -> Manifold:
+        solid = extrude(profile, length).rotate((90, 0, 0))
+        return solid.translate((0, length / 2, LID_Z))
+
+    # The ridge's ends are the hull with a flat base that reaches LID_DETENT farther.
+    length = RIDGE_LENGTH
+    base = Manifold.cube((foot - far, length + 2 * LID_DETENT, -low)).translate(
+        (far, -length / 2 - LID_DETENT, LID_Z + low)
+    )
+    return Manifold.batch_hull([prism(length), base])
+
+
+def build_box(layout: BoxLayout) -> tuple[Manifold, Manifold]:
+    """The box with its wall tops at ``LID_Z``, and the ridge that holds the lid."""
+    outset = LID_FIT + RAIL_WALL
+    half_width, half_depth = (side / 2 for side in layout.board_size)
+    # All the rounded outlines share the lid's corner centers.
+    corner_x, corner_y = half_width - LID_CORNER, half_depth - LID_CORNER
+    overcut = 0.1
+    inset = BOX_WALL - outset  # The inner wall face lies inside the board outline.
+    inner = LID_CORNER - inset  # Radius of the inner corners.
+    corbel = SHELF_INSET - inset
+    flat = 0.8
+    corbel_z = LID_Z - flat - corbel
+    # The wall top widens inward at 45° under the lid's solid border.
+    cavity = [
+        rounded_block(corner_x, corner_y, corbel_z - BOX_FLOOR, inner).translate(
+            (0, 0, BOX_FLOOR)
+        ),
+        rounded_block(corner_x, corner_y, corbel, inner, inner - corbel).translate(
+            (0, 0, corbel_z)
+        ),
+        rounded_block(corner_x, corner_y, flat + overcut, inner - corbel).translate(
+            (0, 0, corbel_z + corbel)
+        ),
+    ]
+    shell = box_shell(half_width, half_depth)
+    box = Manifold.batch_boolean([shell, *cavity], OpType.Subtract)
+    # The bars stop at the inner wall, curved corners included, and reach 0.1 mm
+    # into it to fuse with it.
+    clip = (
+        rounded_block(
+            corner_x, corner_y, corbel_z - BOX_FLOOR + 0.2, inner + overcut
+        ).translate((0, 0, BOX_FLOOR - 0.2))
+        + rounded_block(
+            corner_x, corner_y, corbel, inner + overcut, inner - corbel + overcut
+        ).translate((0, 0, corbel_z))
+        + rounded_block(
+            corner_x, corner_y, flat + overcut, inner - corbel + overcut
+        ).translate((0, 0, corbel_z + corbel))
+    )
+
+    slots = bar_slots()
+    for bar_center, faces, shift in layout.bars:
+        # The bar spans the box and carries a row of slots on each face.
+        # A bar with one slotted face is solid back to the end wall behind it.
+        wall = half_width - inset
+        back = BAR_HALF if -1 in faces else bar_center + wall + overcut
+        front = BAR_HALF if 1 in faces else wall - bar_center + overcut
+        body = Manifold.cube(
+            (back + front, 2 * layout.half_y + 1.0, BAR_TOP - BOX_FLOOR + overcut),
+            center=False,
+        ).translate((bar_center - back, -layout.half_y - 0.5, BOX_FLOOR - overcut))
+        cuts = [
+            face.translate(
+                (bar_center, (column - layout.columns // 2) * BAR_PITCH + shift, 0)
+            )
+            for column in range(layout.columns)
+            for facing, face in ((1, slots), (-1, slots.mirror((1, 0, 0))))
+            if facing in faces
+        ]
+        box += Manifold.batch_boolean([body ^ clip, *cuts], OpType.Subtract)
+
+    return box + lid_rails(half_width, half_depth), lid_detent(half_width, half_depth)
+
+
+def place_figure(solid: Manifold, slot: Slot) -> Manifold:
+    """Lay ``solid`` on its side with its foot in the slot and its head outward."""
+    lying = solid.rotate((0, 90, 0)).rotate((FIGURE_ROLL, 0, 0))
+    if slot.facing < 0:
+        lying = lying.rotate((0, 0, 180))
+    return lying.translate((slot.bar + slot.facing * FOOT_OFFSET, slot.along, DISC_Z))
+
+
+def check_box_fit(
+    core: Manifold,
+    bump: Manifold,
+    lid: Manifold,
+    layout: BoxLayout,
+    teams: list[tuple[list[Part], dict[str, list[Part]]]],
+) -> None:
+    """Raise ``ValueError`` unless feet, figures and the sliding lid all fit."""
+
+    def touches(a: Manifold, b: Manifold) -> bool:
+        return (a ^ b).volume() > TOUCH_VOLUME
+
+    box = core + bump
+    half_width, half_depth = (side / 2 for side in layout.board_size)
+    corner_x, corner_y = half_width - LID_CORNER, half_depth - LID_CORNER
+    outside = core - (
+        box_shell(half_width, half_depth) + rim_envelope(half_width, half_depth)
+    )
+    # The ridge replaces the chamfer under it, so it may reach the unchamfered outline.
+    outside += bump - rounded_block(corner_x, corner_y, LID_Z + 2.0, BOX_CORNER)
+    if outside.volume() > TOUCH_VOLUME:
+        raise ValueError("nothing of the box may stick out of its rounded outer shell")
+    if len(box.decompose()) != 1 or len(lid.decompose()) != 1:
+        raise ValueError("the box and the box board must be single solids")
+    # Every layer must be held by the one below it. The lid's rib pockets are
+    # bridges up to a pitch wide, which the grid has always printed.
+    assert_supported(box)
+    assert_supported(lid.translate((0, 0, -LID_Z)), bridge=layout.pitch)
+    # Closed, the lid rests on the box and the rails hold it with under 0.5 mm of play.
+    if touches(core, lid) or touches(bump, lid):
+        raise ValueError("the closed lid must only rest on the box")
+    if touches(core, lid.translate((0, 0, 0.45))) or not touches(
+        core, lid.translate((0, 0, 0.6))
+    ):
+        raise ValueError("the rails must hold the lid with 0.5 mm of vertical play")
+    for dy in (0.3, -0.3):
+        if touches(core, lid.translate((0, dy, 0))) or not touches(
+            core, lid.translate((0, 2 * dy, 0))
+        ):
+            raise ValueError("the rails must hold the lid sideways within 0.6 mm")
+    # The lid slides out along X without touching the box; only the ridge is in its way.
+    width = layout.board_size[0]
+    for slide in np.arange(0.0, width + 10, 5.0):
+        if touches(core, lid.translate((-slide, 0, 0))):
+            raise ValueError("the lid must slide through its whole travel")
+    if not any(
+        touches(bump, lid.translate((-slide, 0, 0))) for slide in (0.5, 1.0, 1.5)
+    ):
+        raise ValueError("the lid must ride over the ridge that holds it")
+    # The rails leave the lid 0.5 mm of lift, so the trailing edge must ride up
+    # a slope in either direction, never meet a taller vertical face.
+    section = bump.rotate((90, 0, 0)).slice(0.0)
+    step = 0.05
+    heights = []
+    for x in np.arange(-half_width - 2.0, -half_width + 1.0, step):
+        cut = section ^ CrossSection.square((0.01, 10)).translate(
+            (x - 0.005, -LID_Z - 5)
+        )
+        heights.append(0.0 if cut.is_empty() else max(0.0, -cut.bounds()[1] - LID_Z))
+    steepest = max(abs(b - a) for a, b in pairwise(heights)) / step
+    if steepest > math.tan(math.radians(RIDGE_MAX_SLOPE)) + 1e-6:
+        raise ValueError("the lid must be able to ride up both faces of the ridge")
+    # Closed, the lid's end butts against the ridge's ramp and cannot slide out.
+    if not touches(bump, lid.translate((-0.3, 0, 0))):
+        raise ValueError("the closed lid must be held behind the ridge")
+
+    # The foot is a disc standing in its groove; a foot grown by 0.29 mm still fits.
+    foot = Manifold.cylinder(
+        FOOT_HEIGHT,
+        FOOT_DIAMETER / 2 + SLOT_CLEARANCE - 0.01,
+        FOOT_TOP_RADIUS + SLOT_CLEARANCE - 0.01,
+        96,
+    )
+    figures = []
+    for slot in layout.slots:
+        team, seat, facing = slot.team, slot.seat, slot.facing
+        figure = Manifold.compose(figure_solids(teams[team], team_roles()[seat]))
+        placed = place_figure(figure, slot)
+        figures.append(placed)
+        if touches(box, placed) or touches(lid, placed):
+            raise ValueError(
+                "a figure must lie clear of the box, the walls and the lid"
+            )
+        centered = place_figure(foot, slot).translate((0, 0, SLOT_CLEARANCE))
+        if touches(box, centered):
+            raise ValueError("a foot must fit its groove with the planned clearance")
+        # The lips hold the foot against pulling out, and the narrowing against lifting.
+        pulled = place_figure(foot, slot).translate((facing * 0.4, 0, 0))
+        lifted = place_figure(foot, slot).translate((0, 0, SLOT_CLEARANCE + 3.0))
+        if not touches(box, pulled) or not touches(box, lifted):
+            raise ValueError("a foot must be held in its groove")
+        # Lower the figure from above: only its foot meets the narrowing.
+        edge = slot.bar + facing * (FOOT_OFFSET + FOOT_HEIGHT)
+        legs = placed.trim_by_plane((facing, 0, 0), facing * edge)
+        for drop in np.arange(0, 12.1, 1.5):
+            if touches(box, legs.translate((0, 0, drop))):
+                raise ValueError("a figure must drop into its groove")
+    for index, first in enumerate(figures):
+        for second in figures[index + 1 :]:
+            if touches(first, second):
+                raise ValueError("figures must not touch each other")
+
+
+def write_box(
+    layout: BoxLayout,
+    teams: list[tuple[list[Part], dict[str, list[Part]]]],
+    prefix: str = "",
+    variants: list[BoxLayout] = (),
+    plate: bool = False,
+) -> None:
+    """Write the box and its preview, with the figures lying in it and the lid closed.
+
+    With ``plate`` it writes the box and its lid board side by side on one print plate
+    instead of as separate files.
+    """
+    board = build_board(
+        *layout.grid,
+        deployment_rows=layout.deployment_rows,
+        size=layout.board_size,
+        pitch=layout.pitch,
+        corner_radius=LID_CORNER,
+    )
+    assert_printable(board)
+    core, bump = build_box(layout)
+    box = core + bump
+    assert_printable(box)
+    lid = board.translate((0, 0, LID_Z))
+    for fitted in (layout, *variants):
+        check_box_fit(core, bump, lid, fitted, teams)
+    root = Path(__file__)
+    if plate:
+        both = layout_on_plate([box, board], 5.0)
+        assert_printable(both)
+        assert_supported(both, bridge=layout.pitch)
+        if len(both.decompose()) != 2:
+            raise ValueError("the box and the board must be separate on the plate")
+        write_stl(
+            both,
+            root.with_name(f"{prefix}box-plate.stl"),
+            f"rps-flag-hunt-{prefix}box-plate",
+        )
+    else:
+        write_stl(
+            board,
+            root.with_name(f"{prefix}box-board.stl"),
+            f"rps-flag-hunt-{prefix}box-board",
+        )
+        write_stl(box, root.with_name(f"{prefix}box.stl"), f"rps-flag-hunt-{prefix}box")
+
+    parts: list[Part] = [(box, (205, 200, 190)), (lid, (140, 140, 140))]
+    colors = ((212, 170, 60), (28, 32, 58))
+    for slot in layout.slots:
+        team, seat = slot.team, slot.seat
+        for solid in figure_solids(teams[team], team_roles()[seat]):
+            parts.append((place_figure(solid, slot), colors[team]))
+    write_colored_stl(
+        parts, root.with_name(f"{prefix}box-assembled.stl"), f"{prefix}box-assembled"
+    )
+
+
+def figure_solids(team: tuple[list[Part], dict[str, list[Part]]], role: str):
+    body_parts, heads = team
+    return [solid for solid, _ in body_parts + heads[role]]
+
+
 def main() -> None:
     board = write_board()
     figure_body = body()
@@ -832,6 +1461,22 @@ def main() -> None:
     rival = rival_parts(figure_body, hair, heads)
     write_assembled("rival-ninja-assembled", rival[0] + rival[1]["flag"])
     write_board_preview(board, [ninja, rival])
+    tops = [
+        solid.bounding_box()[5]
+        for team in (ninja, rival)
+        for role in TEAM_COUNTS
+        for solid in figure_solids(team, role)
+    ]
+    full = box_layout(max(tops))
+    write_box(full, [ninja, rival])
+    small = small_layout(full, max(tops))
+    write_box(
+        small,
+        [ninja, rival],
+        prefix="test-",
+        variants=small_variants(small),
+        plate=True,
+    )
 
 
 if __name__ == "__main__":

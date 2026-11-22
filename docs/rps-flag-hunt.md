@@ -43,6 +43,33 @@ the plate in your slicer and print only those.
 
 Each team has four Rock, four Paper, four Scissors, one Bomb, and one Flag.
 
+## Store the game
+
+The [game box](../models/rps-flag-hunt/box.stl) holds both teams, and a second,
+larger board is its sliding lid. Print the standard board to play on its own, or
+the [box lid board](../models/rps-flag-hunt/box-board.stl) to close the box; it
+has the same seats, notches and rib grid, but its seats are 25 mm apart instead
+of 23 mm, so symbols are easier to see and pieces easier to grab. The
+[preview](../models/rps-flag-hunt/box-assembled.stl) shows all 28 figures in the
+box and the lid slid shut.
+
+- Before the full box, print the small test box and its 3 × 3 lid board
+  together on [one plate](../models/rps-flag-hunt/test-box-plate.stl) to check the slide, the
+  click of the bump and the figure slots; it holds three figures.
+- Print the box once, upright with the open top facing up, without supports. It
+  measures 191 × 162 × 29 mm. Expect about 130 g of PLA.
+- Print the box lid board flat with the seats up, also without supports (188 ×
+  159 × 3.2 mm, about 65 g). Its sloped edge is the dovetail that holds it.
+- **Figures:** each team has one holder bar with seven slots on each face.
+  Lay a figure on its side with its head pointing away from the bar and drop
+  its round foot from above into a slot; it clicks past a small narrowing and
+  stands in the groove, held by the lips of the slot. Lift it straight up to
+  take it out.
+- **Lid:** push the box lid board into the rails on the box's long walls from the
+  open short end, play side up, until it butts against the stop at the other end.
+  It rides over a small bump near the open end and stays shut. Pull it back out
+  the same way to open the box.
+
 ## Set up
 
 1. Sit opposite each other along the board's long edges. The board is seven

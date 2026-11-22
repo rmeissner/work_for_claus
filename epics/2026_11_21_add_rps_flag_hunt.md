@@ -3,7 +3,7 @@
 Component: `models/rps-flag-hunt/`, the Work for Claus catalog, and the
 rulebook.
 
-PR strategy: merge each
+PR strategy: stacked
 
 Phase 4a is stacked on the board and rulebook PR so the first character
 team can be prepared while the printer is busy. Phase 4b is stacked on
@@ -165,9 +165,23 @@ come up.
 **Depends on:** phase 4c in the PR stack.
 **Can run in parallel:** no.
 
-Add a printable box that stores the board and both teams. Discuss the size,
-the layout, the lid, and how the parts are held with the user at the start of
-this phase, before modelling.
+Add a printable storage box in which a larger second board is the lid. The
+standard board stays unchanged.
+
+- **Box:** one upright piece of about 191 × 162 mm and 29 mm high with 2 mm
+  walls and a 1.2 mm floor. The long walls carry dovetail rails and the closed
+  end a stop; the open end wall is cut down to the lid's underside.
+- **Holders:** one standing bar per team, with seven vertical slots on each
+  face at 22 mm pitch. A figure lies on its side, head outward, and its 20 mm
+  foot drops from above into a groove with lips and a light narrowing. The bars
+  and lips are vertical, so no supports are needed.
+- **Box board:** `box-board.stl` has the same 7 × 6 grid, seats, notches and
+  rib grid at the largest 0.5 mm pitch that fits the box (25 mm). Its existing
+  45° edge bevel is the dovetail tongue. It slides into the rails along X, play
+  side up, with 0.35 mm clearance and under 0.5 mm of play, and a small ramped
+  bump near the open end keeps it shut.
+- **Outputs:** `box.stl`, `box-board.stl` and the coloured `box-assembled.stl`
+  preview.
 
 ### Phase 5 — Remove the plan
 

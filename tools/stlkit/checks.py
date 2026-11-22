@@ -1,6 +1,6 @@
 """Sanity checks for models before they are exported."""
 
-from manifold3d import CrossSection, Error, Manifold
+from manifold3d import CrossSection, Error, JoinType, Manifold
 
 from .shapes import round_corners
 
@@ -41,3 +41,74 @@ def assert_rounded(shape: CrossSection, radius: float) -> None:
             raise ValueError(
                 f"shape has a convex corner sharper than radius {radius} near ({x:.1f}, {y:.1f})"
             )
+
+
+def _unsupported_area(
+    layer: CrossSection, below: CrossSection, reach: float, bridge: float
+) -> float:
+    """Area of ``layer`` that neither ``below`` grown by ``reach`` nor a short bridge holds."""
+    held = below.offset(reach, JoinType.Round)
+    area = 0.0
+    for part in (layer - held).decompose():
+        rim = part.offset(0.05, JoinType.Round) - part
+        # A bridge is short and its supports bracket it: the hull of the places where it
+        # touches the layer below covers it. Two patches on the same edge (a cantilever)
+        # or a single one leave the far side uncovered.
+        contacts = rim - (rim - held)
+        bracketed = (
+            not contacts.is_empty()
+            and (part - contacts.hull().offset(0.05, JoinType.Round)).area() < 0.01
+        )
+        if bracketed and (part - held.offset(bridge / 2)).area() < 0.01:
+            continue
+        area += part.area()
+    return area
+
+
+def worst_unsupported_layer(
+    manifold: Manifold,
+    *,
+    layer_height: float = 0.2,
+    reach: float = 0.25,
+    bridge: float = 5.0,
+) -> tuple[float, float]:
+    """Slice ``manifold`` mid-layer and return the (z, area) of the worst unsupported layer.
+
+    Each layer is compared with the one below, grown outward by ``reach``; a
+    reach of 0.25 mm per 0.2 mm layer is about 51° from vertical. Bridges
+    shorter than ``bridge`` are ignored. The first layer sits on the bed.
+    """
+    top = manifold.bounding_box()[5]
+    worst = (0.0, 0.0)
+    # Slice just off mid-layer, so a face on a layer boundary is not ambiguous.
+    nudge = 0.01
+    below = manifold.slice(layer_height / 2 + nudge)
+    z = layer_height * 1.5 + nudge
+    while z < top:
+        layer = manifold.slice(z)
+        area = _unsupported_area(layer, below, reach, bridge)
+        if area > worst[1]:
+            worst = (z, area)
+        below = layer
+        z += layer_height
+    return worst
+
+
+def assert_supported(
+    manifold: Manifold,
+    *,
+    max_area: float = 0.5,
+    bridge: float = 5.0,
+    layer_height: float = 0.2,
+    reach: float = 0.25,
+) -> tuple[float, float]:
+    """Raise ``ValueError`` unless every layer is supported; return the worst layer."""
+    z, area = worst_unsupported_layer(
+        manifold, layer_height=layer_height, reach=reach, bridge=bridge
+    )
+    if area > max_area:
+        raise ValueError(
+            f"{area:.1f} mm² of the layer at Z = {z:.1f} is unsupported"
+            f" (more than {max_area} mm²)"
+        )
+    return z, area
