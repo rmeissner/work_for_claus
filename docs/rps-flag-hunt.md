@@ -7,40 +7,38 @@ Capture the opposing Flag to win.
 
 - Print one [board](../models/rps-flag-hunt/board.stl) flat, with the seats
   facing up. The full board measures 148 × 128 × 3.2 mm.
-- For each cylinder team, print the [14-piece team plate](../models/rps-flag-hunt/team-plate.stl)
-  once in that player's color. Print the pieces upright on their circular
-  feet. [Individual STLs](../models/rps-flag-hunt/) are available for test prints
-  and replacements.
+- Print one team plate per player, each in that player's color. Choose the
+  [spiky-haired ninja team](../models/rps-flag-hunt/ninja-team-plate.stl) or the
+  [swept-haired rival team](../models/rps-flag-hunt/rival-ninja-team-plate.stl).
+  Each plate holds 14 bodies and 14 keyed heads. Print the parts upright on
+  their circular feet; the two teams can play against each other or two sets
+  of the same design.
 - Start with PLA, a 0.4 mm nozzle, and 0.2 mm layers. Print at 100% scale with
-  supports off. Each piece is 50 mm tall with a 20 mm diameter circular foot.
+  supports off. Every figure has a 20 mm circular foot.
+- The [board preview](../models/rps-flag-hunt/board-assembled.stl) shows both
+  teams standing in their setup rows. The assembled
+  [ninja](../models/rps-flag-hunt/ninja-assembled.stl) and
+  [rival](../models/rps-flag-hunt/rival-ninja-assembled.stl) previews show a
+  single figure.
 
-Use the [2 × 2 test board](../models/rps-flag-hunt/test-board-2x2.stl) to
-check fit before printing the full board. It measures 48 × 48 × 3.2 mm and
-uses the same beveled seats, 20 mm spacing, and outer bevel. Print it
-flat with the seats up to test the recessed “Claus RPS” lettering against
-the build plate. The 20 mm feet touch at nominal size when centered
-in neighboring seats. Check that two printed pieces can sit next to each
-other and lift out separately, then try filling a seven-piece row on the
-full board before printing the second team. Remove any brim from the feet
-and tune your slicer's XY or elephant-foot compensation if the fit is tight.
+### Test the fit
 
-### Chibi ninja team
+Before printing a whole team, test the fit with one body and head. Either
+print a team plate and use two parts from it, or extract one body and head from
+the plate in your slicer and print only those.
 
-The chibi ninja team fits the same board. Use it for one side and a
-cylinder team in a different color for the other.
-
-1. Test-print one [body](../models/rps-flag-hunt/ninja-body.stl) and
-   [head](../models/rps-flag-hunt/ninja-head-rock.stl) in their exported
-   upright orientation with the same settings as the cylinders.
-2. Slide the head straight onto the keyed neck peg. The peg and socket have
-   the same nominal dimensions. If you have a body from an earlier print,
-   use it to test the new head. If the fit is tight, check the socket opening
+1. Slide the head straight onto the keyed neck peg. The peg and socket have
+   the same nominal dimensions. If the fit is tight, check the socket opening
    for first-layer flare and adjust your slicer's elephant-foot compensation.
-   Check that the assembled piece fits the board and that you can read the
-   rear symbol from your side.
-3. Print the [ninja team plate](../models/rps-flag-hunt/ninja-team-plate.stl)
-   for 14 bodies and 14 matching heads. The team includes four Rock, four
-   Paper, four Scissors, one Bomb, and one Flag head.
+2. Check that the assembled figure fits a seat and that you can read the rear
+   symbol from your side. The 20 mm feet touch at nominal size when centered
+   in neighboring seats, so check that two figures can sit next to each other
+   and lift out separately.
+3. Fill a seven-piece row on the board before printing the second team. Remove
+   any brim from the feet and tune your slicer's XY or elephant-foot
+   compensation if the fit is tight.
+
+Each team has four Rock, four Paper, four Scissors, one Bomb, and one Flag.
 
 ## Set up
 
@@ -50,7 +48,7 @@ cylinder team in a different color for the other.
 2. Take four Rocks, four Papers, four Scissors, one Bomb, and one Flag of
    your color. Secretly place them in any order, one piece in each seat of
    the two rows nearest you. Leave the two middle rows empty.
-3. Face each piece's engraved side toward its owner. Keep it that way
+3. Point each piece's rear role symbol toward its owner. Keep it that way
    except when revealing roles during an attack.
 4. Decide who goes first at random. Players alternate turns.
 

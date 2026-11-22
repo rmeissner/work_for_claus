@@ -5,8 +5,9 @@ rulebook.
 
 PR strategy: merge each
 
-Phase 4a is stacked on the board and rulebook PR at the user's request so
-the first character team can be prepared while the printer is busy.
+Phase 4a is stacked on the board and rulebook PR so the first character
+team can be prepared while the printer is busy. Phase 4b is stacked on
+phase 4a after the user reviewed the first character and chose its rival.
 
 Execution mode: web. The assistant opens PRs and the user merges them.
 
@@ -64,10 +65,9 @@ follow the rulebook, keeping each piece's engraved face pointed at its owner.
 - Engraving: cut recognizable symbols into the flat face. Size the marks
   for a 0.4 mm nozzle. Use the same filament and print settings for every
   role on a team. The two teams use distinct colors.
-- Exports: one team-plate STL with 14 separated pieces and one standalone
-  STL per role, followed by one board STL in the next phase. The board and
-  pieces should print without supports at full scale. Start with PLA and
-  0.2 mm layers.
+- Exports: one team-plate STL with the separated pieces of one team and one
+  board STL, plus colored previews. The board and pieces should print
+  without supports at full scale. Start with PLA and 0.2 mm layers.
 - Validate mesh integrity, plate footprint, separation, and deterministic
   regeneration. Check the five engravings, blank fronts, circular feet, and board
   layout in the previews. Inspect a sliced first layer and the engraving
@@ -135,17 +135,19 @@ Use the supplied reference for a simplified chibi ninja silhouette and build
 the geometry in Manifold. Make a common body and five separately printable
 heads with rear role engravings. Keep a circular 20 mm foot, an identical
 opponent-facing profile for all roles, and the cylinder set as a playable
-alternative. Provide an assembled preview, a full team plate, and single
-parts for joint fit checks. Verify support-free slicing before a physical
-test on Claus.
+alternative. Provide an assembled preview and a full team plate. Verify
+support-free slicing before a physical test on Claus.
 
 ### Phase 4b — Follow-up character team
 
-**Depends on:** phase 4a and feedback from a first print and playtest.
+**Depends on:** phase 4a in the PR stack.
 **Can run in parallel:** no.
 
-Use the first team's fit and readability results to design a visually
-distinct opposing team. Agree on its theme after the playtest.
+Use the supplied reference for a swept-haired rival with slanted eyebrows,
+a V-neck shirt, and a rope belt. Share the first team's eye and nose shapes,
+keyed neck joint, 20 mm foot, and rear role marks. Add one team plate and an
+assembled preview in the same catalog project, plus a board preview that
+stands both teams in their setup rows.
 
 ### Phase 5 — Remove the plan
 
@@ -161,5 +163,4 @@ remove this epic specification.
 - Confirm the pieces feel stable and the beveled seats keep them centered
   during play.
 - The model assumes a flat build plate with room for the one-piece board.
-- Check the head-to-body fit and the rear marks on the first character team
-  before choosing a theme for the opposing team.
+- Check head-to-body fit and rear mark legibility on both character teams.
