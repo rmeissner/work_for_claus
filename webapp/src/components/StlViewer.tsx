@@ -72,6 +72,9 @@ function ModelLoader({ url, settings }: StlViewerProps) {
           which leaves mm-sized models nearly black. */}
       <ambientLight intensity={1} />
       <directionalLight position={[1, 2, 3]} intensity={2} />
+      {/* A weaker light from the opposite side, so the back of the model
+          keeps its shading when orbited instead of turning flat and dark. */}
+      <directionalLight position={[-1, 2, -3]} intensity={1.2} />
       <ModelScene url={url} settings={settings} />
     </Canvas>
   )
