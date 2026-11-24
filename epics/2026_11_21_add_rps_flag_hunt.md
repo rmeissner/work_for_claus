@@ -1,8 +1,12 @@
 # Plan: RPS Flag Hunt
 
-Component: `models/rps-flag-hunt/`, the Work for Claus catalog, and the rulebook.
+Component: `models/rps-flag-hunt/`, the Work for Claus catalog, and the
+rulebook.
 
 PR strategy: merge each
+
+Phase 4a is stacked on the board and rulebook PR at the user's request so
+the first character team can be prepared while the printer is busy.
 
 Execution mode: web. The assistant opens PRs and the user merges them.
 
@@ -11,8 +15,8 @@ Execution mode: web. The assistant opens PRs and the user merges them.
 Make a printable, two-player hidden-role board game. Players deploy their pieces
 in secret and battle using rock–paper–scissors to capture the opposing flag.
 Start with upright cylinders, then add a grid that locates the pieces on their
-squares. Try original character sculpts after the prototype has been printed
-and played.
+squares. Prototype an original anime-inspired character team and use feedback
+from printing and play to inform the follow-up team.
 
 ## Architecture Decision
 
@@ -122,20 +126,30 @@ against the phase 2 feet. Publish the rulebook with setup, a combat reference,
 win and draw conditions, and complete print instructions. Run model and
 catalog checks and verify that pieces fit and lift out of neighboring seats.
 
-### Phase 4 — Character pieces
+### Phase 4a — First character team
 
-**Depends on:** phase 3 and feedback from a first print and playtest.
+**Depends on:** phase 3 in the PR stack.
 **Can run in parallel:** no.
 
-Develop original anime-inspired or similarly playful character pieces with
-the same circular foot. Use a common opponent-facing design across the five roles
-within a team. Keep role markings engraved and owner-facing and preserve
-role counts, stable placement, and printability. Keep the cylinder set
-available for printing. Choose the character theme after prototype feedback.
+Use the supplied reference for a simplified chibi ninja silhouette and build
+the geometry in Manifold. Make a common body and five separately printable
+heads with rear role engravings. Keep a circular 20 mm foot, an identical
+opponent-facing profile for all roles, and the cylinder set as a playable
+alternative. Provide an assembled preview, a full team plate, and single
+parts for joint fit checks. Verify support-free slicing before a physical
+test on Claus.
+
+### Phase 4b — Follow-up character team
+
+**Depends on:** phase 4a and feedback from a first print and playtest.
+**Can run in parallel:** no.
+
+Use the first team's fit and readability results to design a visually
+distinct opposing team. Agree on its theme after the playtest.
 
 ### Phase 5 — Remove the plan
 
-**Depends on:** phase 4. **Can run in parallel:** no.
+**Depends on:** phase 4b. **Can run in parallel:** no.
 
 Verify the printable sets, catalog downloads, and permanent rulebook, then
 remove this epic specification.
@@ -147,4 +161,5 @@ remove this epic specification.
 - Confirm the pieces feel stable and the beveled seats keep them centered
   during play.
 - The model assumes a flat build plate with room for the one-piece board.
-- The character theme will be chosen after the prototype playtest.
+- Check the head-to-body fit and the rear marks on the first character team
+  before choosing a theme for the opposing team.
