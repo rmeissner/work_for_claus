@@ -1,4 +1,4 @@
-"""Board, cylinders, and chibi ninjas for RPS Flag Hunt, in millimeters.
+"""Board and chibi ninja teams for RPS Flag Hunt, in millimeters.
 
 Print and play with the circular base at Z = 0. The engraved side faces -Y.
 """
@@ -7,6 +7,7 @@ import sys
 from itertools import pairwise
 from pathlib import Path
 
+import numpy as np
 from manifold3d import CrossSection, Manifold, OpType
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "tools"))
@@ -20,14 +21,6 @@ from stlkit import (
     write_stl,
 )
 from stlkit.rps import FOOT_DIAMETER, TEAM_COUNTS, role_marks
-from stlkit.text import text_shape
-
-BODY_HEIGHT = 50.0
-FOOT_HEIGHT = 10.0
-FLAT_Y = -4.0
-MARK_Z = 30.0
-MARK_SCALE = 1.5
-ENGRAVING_DEPTH = 0.8
 
 BOARD_COLUMNS = 7
 BOARD_ROWS = 6
@@ -40,8 +33,6 @@ SEAT_DEPTH = 0.8
 SEAT_CLEARANCE = 0.2  # Radial clearance around the 20 mm foot.
 SEAT_BEVEL = 0.4
 MARKER_WIDTH = 1.4
-TEST_IMPRINT_DEPTH = 0.6
-
 
 CHIN_LIFT = 2.0
 HEAD_SEAT_Z = 23.2
@@ -135,53 +126,13 @@ def build_board(
     return Manifold.batch_boolean([base, *cutters], OpType.Subtract)
 
 
-def blank_piece() -> Manifold:
-    radius = FOOT_DIAMETER / 2
-    cylinder = Manifold.cylinder(BODY_HEIGHT, radius, circular_segments=96)
-    # Remove a circular segment above the foot to expose a vertical face.
-    cut = Manifold.cube(
-        (FOOT_DIAMETER + 2, radius + FLAT_Y + 1, BODY_HEIGHT - FOOT_HEIGHT + 1)
-    ).translate((-radius - 1, -radius - 1, FOOT_HEIGHT))
-    return cylinder - cut
-
-
-def write_board_and_cylinders() -> None:
-    # Mirror in the print plane so the text reads correctly from underneath.
-    imprint = text_shape("Claus RPS", width=34, height=6).mirror((0, 1))
-    underside_cut = extrude(imprint, TEST_IMPRINT_DEPTH + 0.1).translate((0, 0, -0.1))
-    boards = {
-        "board": build_board(),
-        "test-board-2x2": build_board(2, 2, deployment_rows=0) - underside_cut,
-    }
-    for name, board in boards.items():
-        assert_printable(board)
-        if len(board.decompose()) != 1:
-            raise ValueError(f"{name} must be one connected solid")
-        write_stl(
-            board, Path(__file__).with_name(f"{name}.stl"), f"rps-flag-hunt-{name}"
-        )
-
-    blank = blank_piece()
-
-    team = []
-    for role, mark in role_marks().items():
-        engraving = (
-            extrude(mark.scale((MARK_SCALE, MARK_SCALE)), ENGRAVING_DEPTH + 1)
-            .rotate((90, 0, 0))
-            .translate((0, FLAT_Y + ENGRAVING_DEPTH, MARK_Z))
-        )
-        piece = blank - engraving
-        assert_printable(piece)
-        if len(piece.decompose()) != 1:
-            raise ValueError(f"{role} must be one connected solid")
-        write_stl(piece, Path(__file__).with_name(f"{role}.stl"), role)
-        team.extend([piece] * TEAM_COUNTS[role])
-
-    plate = layout_on_plate(team, gap=4, columns=4)
-    assert_printable(plate)
-    if len(plate.decompose()) != sum(TEAM_COUNTS.values()):
-        raise ValueError("each team piece must be separate on the print plate")
-    write_stl(plate, Path(__file__).with_name("team-plate.stl"), "rps-flag-hunt-team")
+def write_board() -> Manifold:
+    board = build_board()
+    assert_printable(board)
+    if len(board.decompose()) != 1:
+        raise ValueError("board must be one connected solid")
+    write_stl(board, Path(__file__).with_name("board.stl"), "rps-flag-hunt-board")
+    return board
 
 
 def loft(profile: CrossSection, stations: list[tuple[float, float, float]]) -> Manifold:
@@ -205,6 +156,30 @@ def engrave_front(solid: Manifold, shape: CrossSection, depth: float) -> Manifol
     """Project an XZ outline onto the front, following the surface along Y."""
     cutter = face_cut(shape, 8.5, 0, depth=8.5)
     return solid - (cutter - solid.translate((0, -depth, 0)))
+
+
+def eyes_and_nose() -> CrossSection:
+    eye = CrossSection.circle(1.1, 40).translate((3.12, 7.75))
+    nose = CrossSection(
+        [[(0, 0.57), (-0.43, -0.08), (0, -0.36), (0.43, -0.08)]]
+    ).translate((0, 6.35))
+    return eye + eye.mirror((1, 0)) + nose
+
+
+def neck_peg() -> tuple[Manifold, Manifold]:
+    peg = extrude(NECK_KEY, PEG_HEIGHT - 0.6).translate((0, 0, HEAD_SEAT_Z))
+    lead = Manifold.extrude(NECK_KEY, 0.6, scale_top=(0.78, 0.78)).translate(
+        (0, 0, HEAD_SEAT_Z + PEG_HEIGHT - 0.6)
+    )
+    return peg, lead
+
+
+def with_head_socket(head: Manifold) -> Manifold:
+    bore = extrude(NECK_KEY, PEG_HEIGHT + 0.4).translate((0, 0, CHIN_LIFT - 0.1))
+    roof = Manifold.extrude(NECK_KEY, 2.2, scale_top=(0.05, 0.05)).translate(
+        (0, 0, CHIN_LIFT + PEG_HEIGHT + 0.3)
+    )
+    return head - bore - roof
 
 
 def forehead_plate() -> Manifold:
@@ -300,10 +275,7 @@ def body() -> Manifold:
         zipper -= tooth.translate((0, 11.2 + index * 0.8))
     zipper -= CrossSection.square((0.68, 1.0), center=True).translate((0, 22.35))
     jacket = engrave_front(jacket, zipper, depth=0.5)
-    peg = extrude(NECK_KEY, PEG_HEIGHT - 0.6).translate((0, 0, HEAD_SEAT_Z))
-    lead = Manifold.extrude(NECK_KEY, 0.6, scale_top=(0.78, 0.78)).translate(
-        (0, 0, HEAD_SEAT_Z + PEG_HEIGHT - 0.6)
-    )
+    peg, lead = neck_peg()
     return pedestal + legs + jacket + peg + lead
 
 
@@ -345,7 +317,22 @@ def blank_head() -> Manifold:
         head += lock.transform(
             ((1, 0, lean_x / height, x), (0, 1, lean_y / height, y), (0, 0, 1, start))
         )
-    # Keep the rear face flat at eye level, then taper into the existing hair cut.
+    head = trim_ninja_back(head)
+
+    whiskers = (
+        bar((4.01, 6.22), (6.15, 6.43), 0.42)
+        + bar((4.04, 5.64), (6.05, 5.43), 0.42)
+        + bar((4.07, 5.06), (5.94, 4.49), 0.42)
+    )
+    face = eyes_and_nose() + whiskers + whiskers.mirror((1, 0))
+    head = engrave_front(head, face, depth=0.5)
+    head += forehead_plate()
+
+    return with_head_socket(head)
+
+
+def trim_ninja_back(head: Manifold) -> Manifold:
+    # Keep the rear face flat at eye level and taper into the higher hair cut.
     rear_profile = CrossSection(
         [
             [
@@ -361,33 +348,329 @@ def blank_head() -> Manifold:
     rear_trim = extrude(rear_profile, 22).transform(
         ((0, 0, 1, -11), (1, 0, 0, 0), (0, 1, 0, 0))
     )
-    head -= rear_trim
+    return head - rear_trim
 
-    eye = CrossSection.circle(1.1, 40).translate((3.12, 7.75))
-    nose = CrossSection(
-        [[(0, 0.57), (-0.43, -0.08), (0, -0.36), (0.43, -0.08)]]
-    ).translate((0, 6.35))
-    whiskers = (
-        bar((4.01, 6.22), (6.15, 6.43), 0.42)
-        + bar((4.04, 5.64), (6.05, 5.43), 0.42)
-        + bar((4.07, 5.06), (5.94, 4.49), 0.42)
+
+def rising_front_detail(
+    shape: CrossSection,
+    bottom: float,
+    base_y: float,
+    front_y: float,
+) -> Manifold:
+    """Form a raised front detail with a 45-degree printable lead-in."""
+    top = shape.bounds()[3] + 0.1
+    ramp = CrossSection(
+        [
+            [
+                (0, bottom),
+                (base_y, bottom),
+                (front_y, bottom + front_y - base_y),
+                (front_y, top),
+                (0, top),
+            ]
+        ]
     )
-    face = eye + eye.mirror((1, 0)) + nose + whiskers + whiskers.mirror((1, 0))
-    head = engrave_front(head, face, depth=0.5)
-    head += forehead_plate()
+    limit = extrude(ramp, 22).transform(((0, 0, 1, -11), (1, 0, 0, 0), (0, 1, 0, 0)))
+    return face_cut(shape, front_y, 0, depth=3.5) ^ limit
 
-    bore = extrude(NECK_KEY, PEG_HEIGHT + 0.4).translate((0, 0, CHIN_LIFT - 0.1))
-    roof = Manifold.extrude(NECK_KEY, 2.2, scale_top=(0.05, 0.05)).translate(
-        (0, 0, CHIN_LIFT + PEG_HEIGHT + 0.3)
+
+def rival_belt_wrap() -> Manifold:
+    """The rope band around the waist, symmetric about its centre at z 14."""
+    # A 45-degree slope out of the skirt, a short vertical front face and the
+    # same slope back in to the sash, which mirrors the skirt above the belt.
+    return loft(
+        ROUNDED_PROFILE,
+        [
+            (12.7, 4.54, 3.24),
+            (13.5, 5.34, 4.04),
+            (14.5, 5.34, 4.04),
+            (15.3, 4.54, 3.24),
+        ],
     )
-    return head - bore - roof
 
 
-def write_ninjas() -> None:
-    figure_body = body()
-    head = blank_head()
-    parts = {"ninja-body": figure_body}
+def rival_belt() -> Manifold:
+    """The rope: a wrap with one knot, one loop and one string hanging down."""
+    knot = CrossSection.circle(1.1, 24).scale((1.2, 1)).translate((0, 14.0))
+    # The loop hangs diagonally to one side, the string to the other.
+    loop = CrossSection.circle(1, 24).scale((1.25, 2.2))
+    loop -= CrossSection.circle(1, 24).scale((0.65, 1.1)).translate((0, -0.1))
+    loop = loop.rotate(25).translate((2.0, 11.9))
+    string = CrossSection([[(0.1, 13.8), (-1.2, 13.8), (-2.6, 10.4)]])
+    return (
+        rival_belt_wrap()
+        + rising_front_detail(knot, 12.9, 3.4, 4.6)
+        + rising_front_detail(loop, 9.3, 2.7, 3.9)
+        + rising_front_detail(string, 10.3, 2.7, 3.9)
+    )
+
+
+BELT_CENTER_Z = 14.0
+SKIRT_STATIONS = [(8.8, 4.3, 2.4), (10.2, 5.2, 3.7), (14.0, 4.2, 3.0), (15.0, 4.2, 3.0)]
+
+
+def rival_skirt() -> Manifold:
+    """An A-line skirt; its hem is a 45-degree chamfer."""
+    return loft(ROUNDED_PROFILE, SKIRT_STATIONS)
+
+
+def rival_sash() -> Manifold:
+    """A wide, flat cloth band around the waist.
+
+    Directly above the belt it angles in exactly like the skirt below it, so
+    the silhouette is a mirror image about the belt's centre at z 14.
+    """
+    heights, x_radii, y_radii = zip(*SKIRT_STATIONS, strict=True)
+    flare = []
+    for rise in (0.0, 2.5):
+        z = BELT_CENTER_Z - rise
+        flare.append(
+            (
+                BELT_CENTER_Z + rise,
+                float(np.interp(z, heights, x_radii)),
+                float(np.interp(z, heights, y_radii)),
+            )
+        )
+    return loft(ROUNDED_PROFILE, [*flare, (17.0, 4.85, 3.6), (17.4, 4.3, 3.2)])
+
+
+def rival_arms() -> Manifold:
+    # Like the first team, the sleeves hang from the shoulders against the torso
+    # and skirt, ending in a point below the belt.
+    sleeve = loft(
+        ROUNDED_PROFILE,
+        [
+            (10.0, 0.15, 0.3),
+            (11.2, 0.85, 1.45),
+            (12.4, 1.2, 1.9),
+            (13.4, 1.3, 2.05),
+            (15.8, 1.35, 2.1),
+            (19.2, 1.35, 2.1),
+        ],
+    )
+    # The shoulder cap leans inwards and sinks into the torso, without a flat top.
+    shoulder = loft(
+        ROUNDED_PROFILE, [(19.2, 1.35, 2.1), (20.4, 1.1, 1.8), (21.2, 0.7, 1.4)]
+    ).transform(((1, 0, -0.875, 0.875 * 19.2), (0, 1, 0, 0), (0, 0, 1, 0)))
+    sleeve = (sleeve + shoulder).translate((4.75, 0, 0))
+    return sleeve + sleeve.mirror((1, 0, 0))
+
+
+def rival_neck() -> Manifold:
+    return loft(
+        ROUNDED_PROFILE,
+        [
+            (18.6, 0.75, 2.16),
+            (20.5, 1.95, 2.32),
+            (22.0, 2.2, 2.3),
+            (HEAD_SEAT_Z, 2.75, 2.27),
+        ],
+    )
+
+
+def rival_legs() -> Manifold:
+    """A boot, a slim bare leg and the shorts' hem, as one leg to mirror."""
+    # Like the first team's boots, the feet stick out forward a little.
+    boot = loft(
+        ROUNDED_PROFILE,
+        [(2.3, 2.45, 3.65), (3.4, 2.45, 3.65), (4.6, 2.2, 2.8)],
+    ).translate((0, 0.65, 0))
+    # The shorts end in a small hem that widens at no more than 45 degrees.
+    leg = loft(
+        ROUNDED_PROFILE,
+        [
+            (4.4, 1.7, 2.1),
+            (7.0, 1.6, 2.0),
+            (7.8, 2.05, 2.45),
+            (9.5, 2.05, 2.45),
+        ],
+    )
+    return (boot + leg).translate((2.6, 0, 0))
+
+
+def rival_body() -> Manifold:
+    pedestal = Manifold.cylinder(2.4, FOOT_DIAMETER / 2, 9.5, 96)
+    leg = rival_legs()
+    skirt = rival_skirt()
+    # An egg-shaped torso with narrow, sloping shoulders.
+    shirt = loft(
+        ROUNDED_PROFILE,
+        [
+            (16.8, 4.4, 3.2),
+            (18.4, 4.7, 3.5),
+            (19.6, 4.6, 3.45),
+            (21.0, 3.9, 3.1),
+            (22.1, 3.0, 2.7),
+            (HEAD_SEAT_Z, 2.5, 2.3),
+        ],
+    )
+    v_neck = CrossSection.hull_points(
+        [
+            (-2.3, 22.2),
+            (-1.75, HEAD_SEAT_Z + 0.2),
+            (1.73, HEAD_SEAT_Z + 0.2),
+            (2.3, 22.2),
+            (0, 19.0),
+        ]
+    )
+    shirt -= face_cut(v_neck, 6, 0, depth=4.1)
+    peg, lead = neck_peg()
+    return (
+        pedestal
+        + leg
+        + leg.mirror((1, 0, 0))
+        + skirt
+        + shirt
+        + rival_sash()
+        + rival_neck()
+        + rival_belt()
+        + rival_arms()
+        + peg
+        + lead
+    )
+
+
+def hair_shell() -> Manifold:
+    """A thin shell, 0.5 mm off the head surface, that the flat locks are cut from."""
+    return loft(
+        ROUNDED_PROFILE,
+        [
+            (CHIN_LIFT, 6.9, 6.3),
+            (2.8, 7.55, 6.85),
+            (3.8, 8.2, 7.3),
+            (12.3, 8.2, 7.3),
+            (14.0, 8.1, 7.3),
+        ],
+    )
+
+
+def wedge(left: float, right: float, tip: float, bottom: float) -> CrossSection:
+    """A triangle from a top edge at the cap, height 13, to a sharp tip at ``bottom``."""
+    return CrossSection([[(left, 13.0), (tip, bottom), (right, 13.0)]])
+
+
+def front_lock(shell: Manifold, bottom: float, left: float, tip: float) -> Manifold:
+    """A narrow flat lock on the cheek side of the face, cut from the shell."""
+    return shell ^ face_cut(wedge(left, left + 2.4, tip, bottom), 12, 0, depth=10)
+
+
+def side_locks(shell: Manifold, bottom: float) -> Manifold:
+    """Two flat strands down the side of the head, the rear one a bit shorter."""
+    outline = wedge(-0.2, 2.8, 1.1, bottom) + wedge(-3.2, -0.4, -1.9, bottom + 1.4)
+    prism = extrude(outline, 8).transform(((0, 0, 1, 3), (1, 0, 0, 0), (0, 1, 0, 0)))
+    return shell ^ prism
+
+
+# A superellipse that rounds the cap without sharp corners.
+CAP_EXPONENT = 3.5
+CAP_PROFILE = CrossSection(
+    [
+        [
+            (
+                np.sign(np.cos(angle)) * abs(np.cos(angle)) ** (2 / CAP_EXPONENT),
+                np.sign(np.sin(angle)) * abs(np.sin(angle)) ** (2 / CAP_EXPONENT),
+            )
+            for angle in np.linspace(0, 2 * np.pi, 56, endpoint=False)
+        ]
+    ]
+)
+
+
+def rival_hair() -> Manifold:
+    # A thin cap hugs the head. Its lower edge is one straight line just above
+    # the role mark and leaves the head on a 45-degree chamfer.
+    cap = loft(
+        CAP_PROFILE,
+        [
+            (10.8, 7.7, 6.8),
+            (11.3, 8.2, 7.3),
+            (12.3, 8.2, 7.3),
+            (14.0, 8.1, 7.3),
+            # The top rounds over like a dome.
+            *[
+                (14.4 + 2.6 * np.sin(angle), 8.2 * np.cos(angle), 7.4 * np.cos(angle))
+                for angle in np.radians((15, 30, 45, 60, 75, 85))
+            ],
+        ],
+    )
+    # Three short bangs hang from the front of the cap, cut from the shell
+    # like the locks; every edge of the gaps stays within 45 degrees of vertical.
+    hairline = [
+        (-5.6, 11.4),
+        (-4.2, 12.9),
+        (-2.9, 10.0),
+        (-1.2, 13.0),
+        (0.4, 10.8),
+        (2.0, 13.0),
+        (3.5, 10.2),
+        (4.6, 12.9),
+        (5.6, 11.4),
+    ]
+    forehead = CrossSection([[(-5.6, 5), (5.6, 5), *reversed(hairline)]])
+    bangs = CrossSection([[(-5.6, 14), *hairline, (5.6, 14)]])
+    shell = hair_shell()
+    hair = cap - face_cut(forehead, 12, 0, depth=9.5)
+    hair += shell ^ face_cut(bangs, 12, 0, depth=9.5)
+    # Thick blades frame the back like an upside-down U: a row across the
+    # top-back edge, then a column down each back corner that gets shorter
+    # towards the bottom. They point back and outwards, and each underside is a
+    # 45-degree plane, so they print without support. The corner columns stand
+    # on flat shell strips and leave the middle of the back clear for the role mark.
+    blades = [
+        (0, -5.4, 13.0, 0, 5.0, 2.8, 5.0),
+        (-3.9, -5.2, 12.9, -8, 4.6, 2.6, 4.5),
+        (3.9, -5.2, 12.9, 8, 4.6, 2.6, 4.5),
+    ]
+    for side in (-1, 1):
+        for z, width, thickness, length in (
+            (12.7, 4.6, 2.6, 4.0),
+            (10.9, 4.4, 2.5, 3.6),
+            (9.1, 4.2, 2.3, 3.2),
+            (7.3, 4.0, 2.2, 2.8),
+            (5.5, 3.8, 2.0, 2.4),
+        ):
+            blades.append((side * 6.2, -5.4, z, side * 35, width, thickness, length))
+    for x, y, z, yaw, width, thickness, length in blades:
+        # The tip sits a little steeper than 45 degrees above the lower root edge.
+        blade = Manifold.hull_points(
+            [(sx * width / 2, 0, sz * thickness) for sx in (-1, 1) for sz in (0, 1)]
+            + [(0, -length, 1.05 * length)]
+        )
+        hair += blade.rotate((0, 0, yaw)).translate((x, y, z))
+    strip = hair_shell() ^ face_cut(wedge(5.9, 9.0, 7.4, 4.2), -2.6, 0, depth=5.4)
+    hair += strip + strip.mirror((1, 0, 0))
+    # The locks frame the face unevenly: the long front lock on one side
+    # reaches the jaw next to the eye, the other side ends higher.
+    long_side = front_lock(shell, 3.2, 4.9, 6.3) + side_locks(shell, 3.4)
+    short_side = front_lock(shell, 4.0, 5.0, 6.4) + side_locks(shell, 4.2)
+    return hair + long_side + short_side.mirror((1, 0, 0))
+
+
+def rival_head(hair: Manifold) -> Manifold:
+    face = loft(
+        ROUNDED_PROFILE,
+        [
+            (CHIN_LIFT, 6.4, 5.8),
+            (2.8, 7.05, 6.35),
+            (3.8, 7.7, 6.8),
+            (12.3, 7.7, 6.8),
+            (15.1, 7.2, 6.5),
+        ],
+    )
+    brow = bar((1.88, 9.04), (4.25, 9.6), 0.47)
+    features = eyes_and_nose() + brow + brow.mirror((1, 0))
+    # Flatten the plain back of the head for the role mark.
+    head = trim_ninja_back(face) + hair
+    return with_head_socket(engrave_front(head, features, depth=0.5))
+
+
+def write_ninja_team(
+    prefix: str, figure_body: Manifold, head: Manifold
+) -> dict[str, Manifold]:
+    """Write the team plate and return each role's head, chin on the print bed."""
+    parts = {f"{prefix}-body": figure_body}
     team = [figure_body] * sum(TEAM_COUNTS.values())
+    role_heads = {}
     for role, mark in role_marks().items():
         role_cut = (
             extrude(mark, 0.85)
@@ -395,48 +678,140 @@ def write_ninjas() -> None:
             .translate((0, ROLE_FACE_Y + 0.65, ROLE_MARK_Z))
         )
         # Lower the raised chin to the print bed for the standalone head.
-        role_head = (head - role_cut).translate((0, 0, -CHIN_LIFT))
-        parts[f"ninja-head-{role}"] = role_head
-        team.extend([role_head] * TEAM_COUNTS[role])
+        role_heads[role] = (head - role_cut).translate((0, 0, -CHIN_LIFT))
+        parts[f"{prefix}-head-{role}"] = role_heads[role]
+        team.extend([role_heads[role]] * TEAM_COUNTS[role])
 
     for name, solid in parts.items():
         assert_printable(solid, max_size=(20, 20, 31))
         if len(solid.decompose()) != 1:
             raise ValueError(f"{name} must be a single solid")
-        write_stl(solid, Path(__file__).with_name(f"{name}.stl"), name)
 
     plate = layout_on_plate(team, 4, columns=7)
     assert_printable(plate)
     if len(plate.decompose()) != len(team):
         raise ValueError("every team component must be separate on the print plate")
     write_stl(
-        plate, Path(__file__).with_name("ninja-team-plate.stl"), "ninja-team-plate"
+        plate,
+        Path(__file__).with_name(f"{prefix}-team-plate.stl"),
+        f"{prefix}-team-plate",
+    )
+    return role_heads
+
+
+Part = tuple[Manifold, tuple[int, int, int]]
+
+
+def ninja_parts(
+    figure_body: Manifold, role_heads: dict[str, Manifold]
+) -> tuple[list[Part], dict[str, list[Part]]]:
+    """Colored parts of the first team's body and of each role's head."""
+    plate = forehead_plate().translate((0, 0, -CHIN_LIFT))
+    heads = {
+        role: [
+            ((head - plate).translate((0, 0, HEAD_SEAT_Z)), (225, 183, 117)),
+            (plate.translate((0, 0, HEAD_SEAT_Z)), (183, 191, 203)),
+        ]
+        for role, head in role_heads.items()
+    }
+    return [(figure_body, (221, 142, 54))], heads
+
+
+def rival_parts(
+    figure_body: Manifold, hair: Manifold, role_heads: dict[str, Manifold]
+) -> tuple[list[Part], dict[str, list[Part]]]:
+    """Colored parts of the rival team's body and of each role's head."""
+
+    # Each color is a slightly grown region cut out of the figure, so that no
+    # region boundary lies on the figure's own surface. The regions do not
+    # overlap, and the body keeps everything outside them.
+    def grown(solid: Manifold) -> Manifold:
+        return solid.scale((1.01, 1.01, 1))
+
+    arms = rival_arms().scale((1.03, 1.03, 1))
+    belt_region = grown(rival_belt()) - arms
+    sash_region = grown(rival_sash()) - arms - belt_region
+    neck_region = grown(rival_neck()) ^ Manifold.cube((12, 7, 7)).translate(
+        (-6, 1.9, 17)
+    )
+    body_parts = [
+        (figure_body - belt_region - sash_region - neck_region, (120, 126, 169)),
+        (figure_body ^ sash_region, (86, 92, 138)),
+        (figure_body ^ belt_region, (131, 82, 169)),
+        (figure_body ^ neck_region, (221, 182, 142)),
+    ]
+    heads = {}
+    for role, head in role_heads.items():
+        role_hair = head ^ hair.translate((0, 0, -CHIN_LIFT))
+        heads[role] = [
+            ((head - role_hair).translate((0, 0, HEAD_SEAT_Z)), (221, 182, 142)),
+            (role_hair.translate((0, 0, HEAD_SEAT_Z)), (48, 43, 66)),
+        ]
+    return body_parts, heads
+
+
+def write_assembled(name: str, parts: list[Part]) -> None:
+    # Turn the figure around so its face looks at the viewer.
+    write_colored_stl(
+        [(solid.rotate((0, 0, 180)), color) for solid, color in parts],
+        Path(__file__).with_name(f"{name}.stl"),
+        name,
     )
 
-    preview_head = parts["ninja-head-flag"]
-    preview_plate = forehead_plate().translate((0, 0, -CHIN_LIFT))
+
+def team_roles() -> list[str]:
+    """The roles of one team in seat order, with the flag behind the others."""
+    roles = [role for role, count in TEAM_COUNTS.items() for _ in range(count)]
+    roles.remove("flag")
+    roles.insert(BOARD_COLUMNS // 2, "flag")
+    return roles
+
+
+def write_board_preview(
+    board: Manifold,
+    teams: list[tuple[list[Part], dict[str, list[Part]]]],
+) -> None:
+    """Stand both teams in their deployment rows, each facing the other.
+
+    Each team is a single color in this preview: gold and dark blue.
+    """
+    field_width = BOARD_COLUMNS * CELL_PITCH
+    field_depth = BOARD_ROWS * CELL_PITCH
+    seat_floor = BOARD_HEIGHT - SEAT_DEPTH
+    parts: list[Part] = [(board, (140, 140, 140))]
+    # The first team stands at -Y facing +Y; the rival stands at +Y facing -Y.
+    team_colors = ((212, 170, 60), (28, 32, 58))
+    for (body_parts, heads), side, team_color in zip(
+        teams, (-1, 1), team_colors, strict=True
+    ):
+        for seat, role in enumerate(team_roles()):
+            row, column = divmod(seat, BOARD_COLUMNS)
+            # Row 0 is the back row, farthest from the opponent.
+            row = row if side < 0 else BOARD_ROWS - 1 - row
+            x = (column + 0.5) * CELL_PITCH - field_width / 2
+            y = (row + 0.5) * CELL_PITCH - field_depth / 2
+            for solid, _ in body_parts + heads[role]:
+                figure = solid if side < 0 else solid.rotate((0, 0, 180))
+                parts.append((figure.translate((x, y, seat_floor)), team_color))
     write_colored_stl(
-        [
-            (figure_body.rotate((0, 0, 180)), (221, 142, 54)),
-            (
-                (preview_head - preview_plate)
-                .translate((0, 0, HEAD_SEAT_Z))
-                .rotate((0, 0, 180)),
-                (225, 183, 117),
-            ),
-            (
-                preview_plate.translate((0, 0, HEAD_SEAT_Z)).rotate((0, 0, 180)),
-                (183, 191, 203),
-            ),
-        ],
-        Path(__file__).with_name("ninja-assembled.stl"),
-        "ninja-assembled",
+        parts,
+        Path(__file__).with_name("board-assembled.stl"),
+        "board-assembled",
     )
 
 
 def main() -> None:
-    write_board_and_cylinders()
-    write_ninjas()
+    board = write_board()
+    figure_body = body()
+    heads = write_ninja_team("ninja", figure_body, blank_head())
+    ninja = ninja_parts(figure_body, heads)
+    write_assembled("ninja-assembled", ninja[0] + ninja[1]["flag"])
+
+    figure_body, hair = rival_body(), rival_hair()
+    heads = write_ninja_team("rival-ninja", figure_body, rival_head(hair))
+    rival = rival_parts(figure_body, hair, heads)
+    write_assembled("rival-ninja-assembled", rival[0] + rival[1]["flag"])
+    write_board_preview(board, [ninja, rival])
 
 
 if __name__ == "__main__":
