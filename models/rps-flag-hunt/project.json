@@ -1,13 +1,18 @@
 {
   "name": "RPS Flag Hunt",
-  "version": "0.14",
-  "description": "Print the 7 × 6 board once and choose two teams in distinct colors. Each team plate makes one team from 14 bodies and 14 keyed heads. Choose the spiky-haired or swept-haired design and test-fit one body and head before printing the team. Print the board seats up and the pieces upright. Use PLA at 100% scale with a 0.4 mm nozzle, 0.2 mm layers, and supports off. Stand each piece with its rear role symbol facing its owner.",
+  "version": "0.16",
+  "description": "Print the 7 × 6 board once and choose two teams in distinct colors. Each team plate makes one team from 14 bodies and 14 keyed heads. Choose the spiky-haired or swept-haired design and test-fit one body and head before printing the team. Print the board seats up and the pieces upright. Use PLA at 100% scale with a 0.4 mm nozzle, 0.2 mm layers, and supports off. Stand each piece with its rear role symbol facing its owner. Store the game in the box: the figures lie in two holder bars, and the larger box board is a sliding lid.",
   "files": [
     { "file": "board-assembled.stl", "name": "Board with both teams (preview)" },
+    { "file": "box-assembled.stl", "name": "Box with figures (preview)" },
     { "file": "ninja-assembled.stl", "name": "Assembled ninja (preview)" },
     { "file": "rival-ninja-assembled.stl", "name": "Assembled rival ninja (preview)" },
     { "file": "board.stl", "name": "Board (7 × 6)" },
     { "file": "ninja-team-plate.stl", "name": "Ninja team plate (28 parts)" },
-    { "file": "rival-ninja-team-plate.stl", "name": "Rival ninja team plate (28 parts)" }
+    { "file": "rival-ninja-team-plate.stl", "name": "Rival ninja team plate (28 parts)" },
+    { "file": "box.stl", "name": "Game box" },
+    { "file": "box-board.stl", "name": "Box lid board (sliding lid)" },
+    { "file": "test-box-plate.stl", "name": "Test: 3 × 3 box + lid board (print plate)" },
+    { "file": "test-box-assembled.stl", "name": "Test: 3 × 3 box with figures (preview)" }
   ]
 }
