@@ -51,7 +51,8 @@ the [box lid board](../models/rps-flag-hunt/box-board.stl) to close the box; it
 has the same seats, notches and rib grid, but its seats are 25 mm apart instead
 of 23 mm, so symbols are easier to see and pieces easier to grab. The
 [preview](../models/rps-flag-hunt/box-assembled.stl) shows all 28 figures in the
-box and the lid slid shut.
+box and the lid slid shut. The box carries "Ninja RPS" engraved on one long
+wall and the five role symbols on the other.
 
 - Before the full box, print the small test box and its 3 × 3 lid board
   together on [one plate](../models/rps-flag-hunt/test-box-plate.stl) to check the slide, the

@@ -1,6 +1,6 @@
 {
   "name": "RPS Flag Hunt",
-  "version": "0.16",
+  "version": "0.17",
   "description": "Print the 7 × 6 board once and choose two teams in distinct colors. Each team plate makes one team from 14 bodies and 14 keyed heads. Choose the spiky-haired or swept-haired design and test-fit one body and head before printing the team. Print the board seats up and the pieces upright. Use PLA at 100% scale with a 0.4 mm nozzle, 0.2 mm layers, and supports off. Stand each piece with its rear role symbol facing its owner. Store the game in the box: the figures lie in two holder bars, and the larger box board is a sliding lid.",
   "files": [
     { "file": "board-assembled.stl", "name": "Board with both teams (preview)" },
