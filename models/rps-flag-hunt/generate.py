@@ -24,6 +24,7 @@ from stlkit import (
     write_stl,
 )
 from stlkit.rps import FOOT_DIAMETER, TEAM_COUNTS, role_marks
+from stlkit.text import text_shape
 
 BOARD_COLUMNS = 7
 BOARD_ROWS = 6
@@ -53,6 +54,10 @@ BOX_CORNER = 8.0  # Radius of the box's outer vertical corners.
 LID_CORNER = BOX_CORNER - LID_FIT - RAIL_WALL  # The lid's, so the gap stays even.
 TOP_CHAMFER = 1.2  # On the outer top edge of the walls and the rails.
 BASE_CHAMFER = 1.0  # On the outer bottom edge: 45°, so it prints without supports.
+ENGRAVE_DEPTH = 0.8  # Into the 2 mm wall, leaving 1.2 mm behind every engraving.
+ENGRAVE_HEIGHT = 12.4  # Letter and symbol height, about 65% of the flat wall band.
+SYMBOL_PITCH = 30.0  # The five role symbols in an evenly spaced row.
+SYMBOL_ORDER = ("rock", "paper", "scissors", "bomb", "flag")
 GRIP_RADIUS = 5.0  # Finger scoops in both short borders of the lid.
 GRIP_DEPTH = 1.2
 # The lip underside rises at 45° from the rail wall, 0.35 mm off the lid's bevel.
@@ -1276,6 +1281,87 @@ def build_box(layout: BoxLayout) -> tuple[Manifold, Manifold]:
     return box + lid_rails(half_width, half_depth), lid_detent(half_width, half_depth)
 
 
+def engraving_band(layout: BoxLayout) -> tuple[float, float, float, float]:
+    """The flat part of a long wall: (outer y, x reach, band bottom, band top).
+
+    Below the shelf (where the cavity widens) the wall is a full ``BOX_WALL`` thick,
+    and above the bottom chamfer it is flat. The rounded corners start at ``x reach``.
+    """
+    half_width, half_depth = (side / 2 for side in layout.board_size)
+    outer = half_depth + LID_FIT + RAIL_WALL
+    reach = half_width - LID_CORNER
+    inset = BOX_WALL - LID_FIT - RAIL_WALL
+    corbel_z = LID_Z - 0.8 - (SHELF_INSET - inset)
+    return outer, reach, BASE_CHAMFER, corbel_z
+
+
+def sheared_pocket(
+    shape: CrossSection, wall_y: float, side: int, mirror: bool, z: float
+) -> Manifold:
+    """Cut ``shape`` (u right, v up) into the outside of the wall at ``wall_y``.
+
+    ``side`` is -1 for the wall at -Y, 1 for +Y; seen from outside, u runs along +X
+    at -Y and along -X at +Y. At depth w the outline is shifted down by w, so each
+    pocket ceiling slopes at 45° and prints without support. The outline at the wall
+    surface is exactly ``shape``; the cutter starts 0.2 mm outside the wall.
+    """
+    reach = 0.2
+    prism = shape.extrude(ENGRAVE_DEPTH + reach)  # t = w + reach in 0 .. depth + reach
+    sx = -side
+    shear = [
+        [sx, 0, 0, 0],
+        [0, 0, -side, wall_y + side * reach],
+        [0, 1, -1, z + reach],
+    ]
+    return prism.transform(shear)
+
+
+def box_engravings(layout: BoxLayout) -> Manifold:
+    """The name on the -Y wall and the five role symbols on the +Y wall, as cutters."""
+    outer, reach, low, high = engraving_band(layout)
+    # The pocket reaches ENGRAVE_DEPTH below the outline, so center the whole extent.
+    z = (low + high) / 2
+    name = text_shape("Ninja RPS", width=2 * reach - 20.0, height=ENGRAVE_HEIGHT)
+    marks = role_marks()
+    scale = ENGRAVE_HEIGHT / max(
+        marks[key].bounds()[3] - marks[key].bounds()[1] for key in SYMBOL_ORDER
+    )
+    row = []
+    for index, key in enumerate(SYMBOL_ORDER):
+        mark = marks[key].scale((scale, scale))
+        x0, y0, x1, y1 = mark.bounds()
+        offset = (index - (len(SYMBOL_ORDER) - 1) / 2) * SYMBOL_PITCH
+        row.append(mark.translate((offset - (x0 + x1) / 2, -(y0 + y1) / 2)))
+    symbols = CrossSection.batch_boolean(row, OpType.Add)
+    cutters = [
+        sheared_pocket(name, -outer, -1, False, z),
+        sheared_pocket(symbols, outer, 1, True, z),
+    ]
+    return Manifold.batch_boolean(cutters, OpType.Add)
+
+
+def check_engravings(core: Manifold, cutter: Manifold, layout: BoxLayout) -> None:
+    """Raise ``ValueError`` unless the engravings leave 1.2 mm of solid wall behind them."""
+    outer, reach, low, high = engraving_band(layout)
+    x0, y0, z0, x1, y1, z1 = cutter.bounding_box()
+    deepest = outer - ENGRAVE_DEPTH
+    if (
+        x0 < -reach
+        or x1 > reach
+        or z0 < low
+        or z1 > high
+        or min(abs(y0), abs(y1)) < deepest - 1e-6
+    ):
+        raise ValueError("engravings must stay on the flat wall, at most 0.8 mm deep")
+    # Everything behind the deepest point, back to the inner wall face, must be solid.
+    for side in (-1, 1):
+        behind = Manifold.cube(
+            (x1 - x0, BOX_WALL - ENGRAVE_DEPTH, z1 - z0), center=False
+        ).translate((x0, outer - BOX_WALL if side > 0 else -outer + ENGRAVE_DEPTH, z0))
+        if (behind - core).volume() > TOUCH_VOLUME:
+            raise ValueError("engravings must leave 1.2 mm of solid wall")
+
+
 def place_figure(solid: Manifold, slot: Slot) -> Manifold:
     """Lay ``solid`` on its side with its foot in the slot and its head outward."""
     lying = solid.rotate((0, 90, 0)).rotate((FIGURE_ROLL, 0, 0))
@@ -1290,6 +1376,7 @@ def check_box_fit(
     lid: Manifold,
     layout: BoxLayout,
     teams: list[tuple[list[Part], dict[str, list[Part]]]],
+    engraving: Manifold | None = None,
 ) -> None:
     """Raise ``ValueError`` unless feet, figures and the sliding lid all fit."""
 
@@ -1306,6 +1393,8 @@ def check_box_fit(
     outside += bump - rounded_block(corner_x, corner_y, LID_Z + 2.0, BOX_CORNER)
     if outside.volume() > TOUCH_VOLUME:
         raise ValueError("nothing of the box may stick out of its rounded outer shell")
+    if engraving is not None:
+        check_engravings(core, engraving, layout)
     if len(box.decompose()) != 1 or len(lid.decompose()) != 1:
         raise ValueError("the box and the box board must be single solids")
     # Every layer must be held by the one below it. The lid's rib pockets are
@@ -1393,9 +1482,11 @@ def write_box(
     prefix: str = "",
     variants: list[BoxLayout] = (),
     plate: bool = False,
+    engraved: bool = False,
 ) -> None:
     """Write the box and its preview, with the figures lying in it and the lid closed.
 
+    With ``engraved`` the long walls carry the name and the role symbols.
     With ``plate`` it writes the box and its lid board side by side on one print plate
     instead of as separate files.
     """
@@ -1408,11 +1499,14 @@ def write_box(
     )
     assert_printable(board)
     core, bump = build_box(layout)
+    engraving = box_engravings(layout) if engraved else None
+    if engraving is not None:
+        core -= engraving
     box = core + bump
     assert_printable(box)
     lid = board.translate((0, 0, LID_Z))
     for fitted in (layout, *variants):
-        check_box_fit(core, bump, lid, fitted, teams)
+        check_box_fit(core, bump, lid, fitted, teams, engraving)
     root = Path(__file__)
     if plate:
         both = layout_on_plate([box, board], 5.0)
@@ -1468,7 +1562,7 @@ def main() -> None:
         for solid in figure_solids(team, role)
     ]
     full = box_layout(max(tops))
-    write_box(full, [ninja, rival])
+    write_box(full, [ninja, rival], engraved=True)
     small = small_layout(full, max(tops))
     write_box(
         small,
