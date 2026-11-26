@@ -2,6 +2,10 @@
 
 Component: new model `models/ledger-nano-gen5-case/` and the webapp catalog expectations.
 
+PR strategy: stacked
+
+Execution mode: web; the assistant creates PRs, and only the user merges.
+
 ---
 
 ## Overview
