@@ -13,12 +13,14 @@ Execution mode: web; the assistant creates PRs, and only the user merges.
 Add a printable replacement case for a bare Ledger Nano Gen5 board. Its original case was opened
 to verify the board's integrity. The board stays in the new case permanently, and the touchscreen,
 the side button and the USB-C port stay usable. The board has the touchscreen glued on top and a
-battery attached. Keep the case as simple as possible: two PLA parts that print without supports
-and snap together without screws.
+battery attached. Keep the case as simple as possible: two PLA parts that print without supports.
+Like the original case, the board is screwed into posts on the inside of the screen side (the
+bezel), and the tray closes the back with snap hooks.
 
 1. Plan (this PR).
 2. Bottom tray: holds the board and battery, with the USB-C and side-button openings.
-3. Top bezel: a frame with a screen window that snaps onto the tray, plus the assembled preview.
+3. Top bezel: a frame with a screen window and screw posts for the board that snaps onto the tray,
+   plus the assembled preview.
 4. Remove this plan.
 
 ---
@@ -36,15 +38,23 @@ fit without touching the geometry code.
   side-button openings are notches cut down from the top edge of the wall, so they need no bridging.
   The side button is pressed through its opening with a finger; there is no printed pusher.
 - **Bezel:** a flat frame with a window over the touchscreen. It overlaps the screen's edge by a
-  small lip, so it holds the board stack down in the tray. It prints face-down (the visible side on
-  the bed) with snap hooks pointing up. The hooks catch in small grooves on the inside of the tray
-  walls.
+  small lip. It prints face-down (the visible side on the bed) with snap hooks and screw posts
+  pointing up, so neither needs supports. The hooks catch in grooves at the bottom of channels in
+  the tray walls (the board leaves no room for a hook arm inside the pocket).
+- **Screw posts:** as in the original case, posts rise from the inside of the bezel, outside the
+  screen area, to the board's top surface. The board is screwed to them from the back (battery
+  side) with small self-tapping screws that cut their own thread into the PLA. The board is thus
+  held by the bezel, not by the tray.
+- **Assembly:** screw the board into the bezel, then snap the tray on from behind.
 
 ### Alternatives Considered
 
 - **Slip-in sleeve** (the first version of this plan): not usable, because the device has to stay
   in the case with the screen working.
-- **Tray and bezel held by screws:** sturdier, but needs screws and screw bosses.
+- **Tray and bezel held together by screws:** sturdier, but needs more screws and bosses through
+  the tray; the snap fit stays simpler. Only the board is screwed in, like in the original case.
+- **Board held only by the bezel lip (no screws):** simpler, but the board could rattle and the
+  original case used screws.
 - **One-piece frame the board slides into:** one part, but the lips around the window are overhangs
   and inserting the board stack risks damaging it.
 
@@ -66,18 +76,26 @@ teardown with dimensions was found. Phase 2 uses placeholders, each marked `# TO
   point, and the plug's overmold size (so a cable fits).
 - Side button: which edge, centre offset from a short edge, height of its centre, button size.
 - Anything sticking out (flex cables, battery wires, antennas) that needs extra room.
+- Screw holes in the board: how many, centre positions from the board edges, hole diameter, screw
+  size and length, and the height from the board's top surface (where the posts rest) to the
+  screen surface.
 
 Placeholders: outline 76 × 50 mm (the device minus a ~1.7 mm shell per side), stack height 7.5 mm,
 screen visible area 57 × 43 mm centred (2.8" 4:3 E Ink, 400 × 300 px), glued border 2 mm,
 USB-C centred on a short edge at 3 mm height with a 12 × 7 mm plug opening, side button centred
-on a long edge at 4 mm height, 8 mm long.
+on a long edge at 4 mm height, 8 mm long. Screws: 4 holes, 3 mm in from each board corner (outside
+the screen area), M2 self-tapping (1.6 mm pilot hole, 4 mm post diameter), board top surface
+1.5 mm below the screen surface.
 
 ### Parameters
 
-- Board measurements above, plus `CLEARANCE` (default 0.3 mm per side), `WALL` (default 1.6 mm),
-  `FLOOR` (default 1.2 mm), bezel thickness (default 1.6 mm) and window lip (default 1 mm).
+- Board measurements above, plus `CLEARANCE` (default 0.3 mm per side), `WALL` (2.0 mm, to fit
+  the hook channels), `FLOOR` (default 1.2 mm), bezel thickness (default 1.6 mm) and window lip
+  (default 1 mm).
+- Screw posts: positions, post diameter and pilot hole diameter as named parameters.
 - `CORNER_RADIUS` (outer): a placeholder default of 3 mm, to be adjusted later by the user.
-- Snap fit: hook overhang 0.5 mm and groove depth 0.6 mm, to tune after the first print.
+- Snap fit: hook arm 0.7 mm in a 0.8 mm channel, 0.4 mm barb overhang into a 1.2 mm groove with a
+  45° roof, to tune after the first print.
 - PLA, 0.4 mm nozzle, 0.2 mm layers.
 
 ### Outputs
@@ -85,13 +103,15 @@ on a long edge at 4 mm height, 8 mm long.
 - `tray.stl` and `bezel.stl`, each in its print orientation.
 - `assembled.stl` (added in Phase 3): both parts put together, listed first as the preview.
 - `project.json` with version `1.0` and a description covering print settings (PLA, no supports),
-  assembly (insert the board, snap on the bezel) and the fact that the fit hasn't been tested yet.
+  assembly (screw the board into the bezel, snap on the tray) and the fact that the fit hasn't been tested yet.
 
 ### Validation
 
 - `generate.py` asserts that each part is one connected, printable solid (`assert_printable`,
   `decompose()`), and that the board stack fits the pocket with the clearance on every side.
-  In Phase 3 it also asserts that the bezel and tray don't intersect apart from the snap contact.
+  In Phase 3 it also asserts that the bezel and tray don't intersect apart from the snap contact,
+  that the posts stay outside the screen window and the board stack touches them only on its top
+  surface.
 - `pytest` checks that the committed STLs match the script.
 - Add the slug to the expected list in `webapp/src/models/buildModels.test.ts` (Phase 2).
 - Check the preview in the webapp and attach screenshots to each PR.
@@ -118,7 +138,7 @@ in the tray walls so Phase 3 only adds the bezel.
 
 **Depends on:** 2. **Can run in parallel:** no.
 
-Add the bezel with the screen window, lip and snap hooks, plus `bezel.stl` and `assembled.stl` in
+Add the bezel with the screen window, lip, snap hooks and screw posts, plus `bezel.stl` and `assembled.stl` in
 `project.json`. Bump the version if Phase 2 is already merged.
 
 ### Phase 4 — Remove the plan
@@ -131,7 +151,9 @@ Verify that phases 2 and 3 are merged and delete this file.
 
 ## Open Questions and Assumptions
 
-- Board dimensions are placeholders until the user measures the board; the fit is not verified.
+- Board dimensions and screw positions are placeholders until the user measures the board; the
+  fit is not verified.
+- The battery must leave the screw holes reachable from the back; to check when measuring.
 - The side button is pressed through an opening, not through a printed pusher. If it turns out to
   sit too deep to reach, a pusher can be added later.
 - The corner radius is a placeholder and will be adjusted later.
