@@ -107,6 +107,7 @@ describe('App', () => {
       'Calibration cube',
       'Glider',
       'Klemmbaustein 2 x 4',
+      'Ledger Nano Gen5 case',
       'Meissner wall',
       'Pyramid',
       'RPS Flag Hunt',

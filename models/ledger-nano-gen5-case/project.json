@@ -1,0 +1,6 @@
+{
+  "name": "Ledger Nano Gen5 case",
+  "version": "1.0",
+  "description": "Replacement case for a bare Ledger Nano Gen5 board: a tray that holds the board with its touchscreen and battery, with openings for the USB-C port and the side button. This version has the tray only; the top bezel that snaps onto it follows. Print the tray floor-down in PLA at 100% scale with a 0.4 mm nozzle, 0.2 mm layers and supports off. The board dimensions are placeholders and the fit has not been tested yet: measure the board and adjust the parameters in generate.py before printing.",
+  "files": [{ "file": "tray.stl", "name": "Bottom tray" }]
+}
