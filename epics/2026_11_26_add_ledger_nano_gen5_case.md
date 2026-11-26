@@ -52,10 +52,11 @@ fit without touching the geometry code.
 
 ## Tech Specs
 
-### Board measurements (needed before Phase 2)
+### Board measurements
 
-The bare board's size is not published (the finished device is 79.40 × 53.35 × 8.64 mm). Phase 2
-needs these measured with calipers, all in mm:
+The bare board's size is not published (the finished device is 79.40 × 53.35 × 8.64 mm), and no
+teardown with dimensions was found. Phase 2 uses placeholders, each marked `# TODO: measure` in
+`generate.py`, and the user replaces them with caliper measurements (all in mm) later:
 
 - Board outline: length × width of the largest part of the stack (board, screen or battery).
 - Stack height: from the lowest point (battery or underside parts) to the screen surface.
@@ -65,6 +66,11 @@ needs these measured with calipers, all in mm:
   point, and the plug's overmold size (so a cable fits).
 - Side button: which edge, centre offset from a short edge, height of its centre, button size.
 - Anything sticking out (flex cables, battery wires, antennas) that needs extra room.
+
+Placeholders: outline 76 × 50 mm (the device minus a ~1.7 mm shell per side), stack height 7.5 mm,
+screen visible area 57 × 43 mm centred (2.8" 4:3 E Ink, 400 × 300 px), glued border 2 mm,
+USB-C centred on a short edge at 3 mm height with a 12 × 7 mm plug opening, side button centred
+on a long edge at 4 mm height, 8 mm long.
 
 ### Parameters
 
@@ -102,7 +108,7 @@ This file only.
 
 ### Phase 2 — Bottom tray
 
-**Depends on:** 1, merged, and the board measurements. **Can run in parallel:** no.
+**Depends on:** 1, approved (stacked). **Can run in parallel:** no.
 
 Add `models/ledger-nano-gen5-case/` with `generate.py` (parameters and the tray), `project.json`
 and `tray.stl`, plus the slug in `webapp/src/models/buildModels.test.ts`. Include the snap grooves
@@ -125,7 +131,7 @@ Verify that phases 2 and 3 are merged and delete this file.
 
 ## Open Questions and Assumptions
 
-- Phase 2 is blocked until the board measurements are available.
+- Board dimensions are placeholders until the user measures the board; the fit is not verified.
 - The side button is pressed through an opening, not through a printed pusher. If it turns out to
   sit too deep to reach, a pusher can be added later.
 - The corner radius is a placeholder and will be adjusted later.
