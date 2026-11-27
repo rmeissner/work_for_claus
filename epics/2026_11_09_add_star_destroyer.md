@@ -24,10 +24,11 @@ committed STLs, and `project.json`. No production viewer change or new dependenc
 is expected. Model folders contain only `generate.py`, metadata, and STLs.
 
 The hull prints as a connected unfolded net, with grooves for hand folding at
-room temperature, following the approach used by the 24-point star. A six-face,
-clipped-diamond stern divides the sharp flank bend into two gentler folds.
+room temperature, following the approach used by the 24-point star. A seven-face
+stern includes narrow side facets and an 8 mm flat mounting strip between the
+two building panels. The strip tapers toward the bow as part of the folding fan.
 A transverse engine blade rises into the loosely folded hull from below. Its
-single top tab enters a closed hole formed by two half-cuts at the upper ridge.
+single top tab enters a closed hole in the flat mounting strip.
 The two lower faces then engage rear-open slits beneath the blade's two wider,
 1 mm bottom hooks, holding the lower seam shut. This replaces the rejected rear cap, tapered
 plug, and outer collar. Coincident edges alone are insufficient for retention.
@@ -61,14 +62,27 @@ The preview and flat STLs come from the same geometric definition.
   review both hinge continuity and room for the folded panel thickness.
 - Use the conservative toolkit envelope of 220 x 220 mm for each print plate.
 - Engine blade: three raised, recessed/tapered engine bells with intact floors;
-  two lower retaining hooks, one top locating tab, and a reserved bridge mount.
-  The lower panels have rear-open mating slits; mirrored upper-ridge half-cuts form
-  one closed tab hole with at least 1 mm of material remaining toward the stern.
-- Future bridge holder: approximately **3 mm** thick, attached to the rear panel
-  rather than relying on the thin hull skin alone.
+  two lower retaining hooks, one top locking tab, and bearing shoulders beneath
+  the mounting strip. Close the obsolete bridge-mount slot in the blade.
+  The lower panels have rear-open mating slits; the mounting strip has one closed
+  tab hole with at least 1 mm of material remaining toward the stern.
+- Bridge support: a compact, broad tower on the aft flat mounting strip, between
+  the two building panels. Match the longitudinal hull slope and keep the reach
+  short. Taper the body toward the upper bridge landing.
+- A short integral dovetail rail on the strip engages a channel under the tower
+  and blocks lifting. Slide the tower into position before installing the engine
+  blade; the blade's compact top tab then enters the tower pocket and blocks
+  reverse sliding. A small bearing shoulder supports the underside of the strip.
+  This replaces a purely locating saddle fit without adding a
+  flexible snap or a loose fastener. Verify both restraints and their assembly order.
 - Future bridge: a volumetric shape, interpreting the drawing's **10 mm** as
   fore-aft depth unless corrected; two top shield details. Choose a support-free
   shield construction and explain any approximation to spherical shape.
+- Keep the accepted upper bridge exterior and shields. A keyed peg on the bridge
+  underside enters a socket in the tower; the hidden coupling may change to make
+  both parts printable. Print the tower inverted with its mounting channel upward and
+  the bridge top-face-down with its peg upward. Check any short socket bridges
+  and expanding tapers rather than requiring supports inside the mounting channel.
 - Use named parameters for dimensions, shell/building heights, folds, and fit.
 - Do not claim successful cold folding or secure retention before a physical
   print. PLA groove thickness and clearance may need adjustment on Claus.
@@ -76,6 +90,9 @@ The preview and flat STLs come from the same geometric definition.
   Remove obsolete skeletal part files and list every remaining STL in metadata.
 - Metadata includes current dimensions, estimated material use, assembly order,
   and a version bump whenever the model changes.
+- Use the matching version 1.7 hull, engine blade, and tower together; earlier
+  versions have different rail/tab dimensions. The accepted upper bridge and shields
+  can be reused.
 
 ### Validation
 
@@ -113,8 +130,9 @@ the bridge mount but do not include bridge/shield parts in this PR.
 
 **Depends on:** 2, merged after user review. **Can run in parallel:** no.
 
-Add the 3 mm holder, volumetric bridge, and two top shields. Validate retention,
-support-free print orientations, assembly access, and the complete silhouette.
+Add the compact tower, integral flat-strip dovetail, volumetric bridge, and two
+top shields. Validate mounting-strip seating, anti-lift and anti-slide retention,
+peg/socket fits, print orientations, staged assembly access, and the complete silhouette.
 Update metadata, version, exports, and screenshots.
 
 ### Phase 4 — Remove the plan
@@ -127,6 +145,6 @@ Verify all phases and remove this specification. Do not change the glider epic.
 
 - PLA, a 0.4 mm nozzle, 0.2 mm layers, and roughly 150 mm length are assumed.
 - Cold folding is required; hinge durability and retention need a physical print.
-- The six-face stern and 10 mm bridge-depth interpretation are implementation
+- The seven-face stern and 10 mm bridge-depth interpretation are implementation
   choices derived from the drawing, to review through the next previews.
 - No flight requirement, magnets, coins, or separate display stand.
